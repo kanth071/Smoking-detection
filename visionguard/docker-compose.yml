@@ -1,0 +1,14 @@
+# PostgreSQL for VisionGuard.
+#   docker compose up -d
+#   export DATABASE_URL="postgresql+psycopg2://visionguard:visionguard@localhost:5432/visionguard"
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: visionguard
+      POSTGRES_PASSWORD: visionguard
+      POSTGRES_DB: visionguard
+    ports: ["5432:5432"]
+    volumes: ["pgdata:/var/lib/postgresql/data"]
+volumes:
+  pgdata:

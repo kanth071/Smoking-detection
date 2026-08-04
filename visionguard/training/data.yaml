@@ -1,0 +1,23 @@
+# =============================================================
+#  Cigarette dataset config for YOLOv11 training.
+#  Point `path` at your dataset root. Expected layout:
+#
+#    dataset/
+#      images/train/*.jpg      labels/train/*.txt
+#      images/val/*.jpg        labels/val/*.txt
+#
+#  Each label .txt has one line per box:  <class> <cx> <cy> <w> <h>
+#  (all normalized 0..1). For a single "cigarette" class, <class> is always 0.
+# =============================================================
+
+path: ./dataset        # dataset root (relative to where you run training)
+train: images/train
+val: images/val
+
+nc: 1                  # number of classes
+names:
+  0: cigarette
+
+# If your downloaded dataset also has a "person"/"smoke" class, its class
+# indices MUST match this list. Check the dataset's own data.yaml and copy its
+# names/nc here so indices line up — mismatched indices silently wreck accuracy.

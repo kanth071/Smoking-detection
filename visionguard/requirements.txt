@@ -1,0 +1,12 @@
+# --- Detection ---
+ultralytics>=8.3.0            # YOLOv11 + native ByteTrack
+opencv-python-headless>=4.8   # VideoCapture/encode; swap for opencv-python if you want a native window
+numpy>=1.24
+
+# --- App / backend ---
+fastapi>=0.110
+uvicorn[standard]>=0.29
+sqlalchemy>=2.0
+pydantic>=2.6
+pyyaml>=6.0
+psycopg2-binary>=2.9         # PostgreSQL driver

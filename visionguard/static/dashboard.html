@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>VisionGuard — Live Monitoring</title>
+<style>
+  :root{
+    --bg:#0b1020; --panel:#121a33; --panel2:#0f1730; --line:#22305a;
+    --ink:#e8edfb; --muted:#93a0c4; --cobalt:#2f6bff; --cobalt-dim:#20408f;
+    --red:#ff4d5e; --green:#37d67a; --orange:#ffab2e; --yellow:#ffd23f;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+       background:var(--bg);color:var(--ink)}
+  header{display:flex;align-items:center;gap:12px;padding:14px 22px;
+         border-bottom:1px solid var(--line);background:var(--panel2)}
+  header .logo{width:12px;height:12px;border-radius:50%;background:var(--cobalt);
+               box-shadow:0 0 12px var(--cobalt)}
+  header h1{font-size:18px;margin:0;letter-spacing:.3px}
+  header .sub{color:var(--muted);font-size:12px;margin-left:auto}
+  .wrap{display:grid;grid-template-columns:1.6fr 1fr;gap:18px;padding:18px 22px}
+  @media(max-width:1000px){.wrap{grid-template-columns:1fr}}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+  .card h2{font-size:13px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);
+           margin:0;padding:12px 16px;border-bottom:1px solid var(--line)}
+  .video{position:relative;background:#000;aspect-ratio:16/9;display:flex}
+  .video img{width:100%;height:100%;object-fit:contain}
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:14px 16px}
+  .stat{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px}
+  .stat .n{font-size:26px;font-weight:700}
+  .stat .l{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px}
+  .n.red{color:var(--red)} .n.green{color:var(--green)} .n.orange{color:var(--orange)}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{padding:9px 12px;text-align:left;border-bottom:1px solid var(--line)}
+  th{color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.6px}
+  tbody tr:hover{background:var(--panel2)}
+  .pill{padding:2px 8px;border-radius:999px;font-size:11px;font-weight:600}
+  .pill.CONFIRMED{background:rgba(255,77,94,.15);color:var(--red)}
+  .pill.REJECTED{background:rgba(147,160,196,.15);color:var(--muted)}
+  .pill.POTENTIAL{background:rgba(255,171,46,.15);color:var(--orange)}
+  .pill.RESTRICTED_ZONE_SMOKING{background:rgba(255,77,94,.15);color:var(--red)}
+  .pill.INFORMATIONAL_SMOKING{background:rgba(47,107,255,.15);color:var(--cobalt)}
+  .btn{border:1px solid var(--line);background:var(--panel2);color:var(--ink);
+       padding:4px 10px;border-radius:8px;cursor:pointer;font-size:12px}
+  .btn:hover{border-color:var(--cobalt)}
+  .btn.ok:hover{border-color:var(--green);color:var(--green)}
+  .btn.no:hover{border-color:var(--red);color:var(--red)}
+  .analytics{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:14px 16px}
+  .bar{display:flex;align-items:center;gap:8px;margin:6px 0;font-size:12px}
+  .bar .track{flex:1;height:8px;background:var(--panel2);border-radius:6px;overflow:hidden}
+  .bar .fill{height:100%;background:var(--cobalt)}
+  .muted{color:var(--muted)} .empty{padding:22px 16px;color:var(--muted);font-size:13px}
+  .scroll{max-height:360px;overflow:auto}
+  a{color:var(--cobalt);text-decoration:none}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo"></div>
+  <h1>VisionGuard</h1>
+  <div class="sub" id="statusline">connecting…</div>
+  <button class="btn no" style="margin-left:14px" onclick="clearData()">Clear past data</button>
+</header>
+
+<div class="wrap">
+  <div>
+    <div class="card">
+      <h2>Live processing</h2>
+      <div class="video"><img id="feed" src="/video_feed" alt="live feed"/></div>
+      <div class="stats">
+        <div class="stat"><div class="n" id="s-persons">0</div><div class="l">Persons</div></div>
+        <div class="stat"><div class="n red" id="s-smoking">0</div><div class="l">Smoking now</div></div>
+        <div class="stat"><div class="n green" id="s-fps">0</div><div class="l">FPS</div></div>
+        <div class="stat"><div class="n orange" id="s-confirmed">0</div><div class="l">Confirmed</div></div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:18px">
+      <h2>Analytics</h2>
+      <div class="analytics">
+        <div><div class="muted" style="font-size:11px;margin-bottom:6px">BY EVENT TYPE</div><div id="an-event"></div></div>
+        <div><div class="muted" style="font-size:11px;margin-bottom:6px">BY STATUS</div><div id="an-status"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Violations &nbsp;·&nbsp; human review</h2>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Ref</th><th>Type</th><th>ID</th><th>Zone</th><th>Conf</th><th>Status</th><th>Evidence</th><th>Review</th></tr></thead>
+        <tbody id="rows"><tr><td colspan="8" class="empty">No violations yet.</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Evidence Modal Viewer -->
+<div id="ev-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9999;align-items:center;justify-content:center;padding:20px;" onclick="closeModal(event)">
+  <div style="background:var(--panel);border:1px solid var(--line);border-radius:16px;max-width:950px;width:100%;max-height:90vh;overflow:auto;padding:20px;position:relative;" onclick="event.stopPropagation()">
+    <div style="display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:16px;">
+      <h3 id="ev-modal-title" style="margin:0;font-size:16px;color:var(--ink);">Evidence Snapshots</h3>
+      <button class="btn no" onclick="document.getElementById('ev-modal').style.display='none'" style="font-weight:bold;font-size:14px;padding:4px 12px;">✕ Close</button>
+    </div>
+    <div id="ev-modal-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;"></div>
+  </div>
+</div>
+
+<script>
+async function j(u,o){const r=await fetch(u,o);if(!r.ok)throw new Error(r.status);return r.json();}
+
+function showEvidence(ref, count){
+  const grid = document.getElementById('ev-modal-grid');
+  document.getElementById('ev-modal-title').textContent = `Violation ${ref} — ${count} Evidence Frame(s)`;
+  grid.innerHTML = '';
+  for(let i=0; i<count; i++){
+    const idx = String(i).padStart(2, '0');
+    const url = `/evidence/${ref}/frame_${idx}.jpg`;
+    grid.innerHTML += `
+      <div style="background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:8px;text-align:center;">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:6px;font-weight:600;">FRAME ${idx} (Red Mark Box)</div>
+        <a href="${url}" target="_blank">
+          <img src="${url}" style="width:100%;border-radius:8px;border:2px solid var(--red);display:block;object-fit:cover;" alt="frame ${idx}"/>
+        </a>
+        <div style="font-size:10px;color:var(--muted);margin-top:4px;">Tap image to view full-res</div>
+      </div>`;
+  }
+  document.getElementById('ev-modal').style.display = 'flex';
+}
+
+function closeModal(e){
+  document.getElementById('ev-modal').style.display = 'none';
+}
+
+async function refreshStats(){
+  try{
+    const s=await j('/api/stats');
+    s_persons.textContent=s.persons; s_smoking.textContent=s.smoking;
+    s_fps.textContent=s.fps; s_confirmed.textContent=s.confirmed;
+    statusline.textContent = s.detecting ? 'detection active' : 'streaming (no model/camera)';
+    statusline.style.color = s.detecting ? 'var(--green)' : 'var(--orange)';
+  }catch(e){ statusline.textContent='offline'; statusline.style.color='var(--red)'; }
+}
+
+function bars(obj,total,el){
+  el.innerHTML='';
+  const entries=Object.entries(obj||{});
+  if(!entries.length){el.innerHTML='<div class="muted" style="font-size:12px">—</div>';return;}
+  for(const [k,v] of entries){
+    const pct=total?Math.round(v/total*100):0;
+    el.insertAdjacentHTML('beforeend',
+      `<div class="bar"><span style="width:120px" class="muted">${k}</span>
+       <span class="track"><span class="fill" style="width:${pct}%"></span></span>
+       <b>${v}</b></div>`);
+  }
+}
+
+async function refreshData(){
+  try{
+    const vs=await j('/api/violations?limit=100');
+    const rows=document.getElementById('rows');
+    if(!vs.length){rows.innerHTML='<tr><td colspan="8" class="empty">No violations yet.</td></tr>';}
+    else{
+      rows.innerHTML=vs.map(v=>{
+        const ev = v.num_evidence_frames > 0
+          ? `<div style="display:flex;gap:4px;align-items:center;">
+               ${Array.from({length: v.num_evidence_frames}, (_, i) => {
+                 const idx = String(i).padStart(2, '0');
+                 const url = `/evidence/${v.ref}/frame_${idx}.jpg`;
+                 return `<a href="#" onclick="showEvidence('${v.ref}', ${v.num_evidence_frames}); return false;" title="Red-Mark Box Frame ${idx}">
+                           <img src="${url}" style="width:52px;height:38px;object-fit:cover;border:1.5px solid var(--red);border-radius:4px;" alt="frame ${idx}"/>
+                         </a>`;
+               }).join('')}
+             </div>`
+          : '<span class="muted">—</span>';
+        const review = (v.status==='POTENTIAL'||v.status==='CONFIRMED'&&!v.reviewed_at)
+          ? `<button class="btn ok" onclick="review(${v.id},'CONFIRMED')">✓</button>
+             <button class="btn no" onclick="review(${v.id},'REJECTED')">✕</button>`
+          : `<span class="muted">${v.review_result||''}</span>`;
+        return `<tr>
+          <td><b>${v.ref}</b></td>
+          <td><span class="pill ${v.event_type}">${(v.event_type||'').replace('_SMOKING','')}</span></td>
+          <td>#${v.person_track_id}</td>
+          <td>${v.zone||'—'}</td>
+          <td>${v.confidence!=null?v.confidence.toFixed(2):'—'}</td>
+          <td><span class="pill ${v.status}">${v.status}</span></td>
+          <td>${ev}</td>
+          <td>${review}</td></tr>`;
+      }).join('');
+    }
+    const a=await j('/api/analytics');
+    bars(a.by_event_type,a.total,document.getElementById('an-event'));
+    bars(a.by_status,a.total,document.getElementById('an-status'));
+  }catch(e){}
+}
+
+async function review(id,result){
+  try{ await j(`/api/violations/${id}/review`,{method:'PATCH',
+       headers:{'Content-Type':'application/json'},body:JSON.stringify({result})});
+       refreshData(); }catch(e){}
+}
+
+async function clearData(){
+  if(!confirm('Delete ALL past violations and their evidence images?'))return;
+  try{ await fetch('/api/violations',{method:'DELETE'}); refreshData(); refreshStats(); }
+  catch(e){}
+}
+
+setInterval(refreshStats,1000);
+setInterval(refreshData,2500);
+refreshStats(); refreshData();
+</script>
+</body>
+</html>

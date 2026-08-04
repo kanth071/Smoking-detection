@@ -1,0 +1,59 @@
+# ============================================================
+# VisionGuard configuration — every threshold is tunable here.
+# ============================================================
+
+# Input source:
+#   0            -> this laptop's default webcam  (default)
+#   1, 2 ...     -> other cameras
+#   "rtsp://..." -> IP / CCTV camera
+#   "clip.mp4"   -> a recorded file (optional, for testing)
+source: 0
+capture_mode: "server"
+
+models:
+  person: "yolo11n.pt"      # Ultra-fast nano person tracking model (5.4MB, 60+ FPS)
+  cigarette: "best.pt"      # Custom trained YOLO26 cigarette detection model
+
+detection:
+  person_conf: 0.35                # 0.35 confidence strictly detects human beings only
+  cig_conf: 0.25                # 0.25 standard confidence for trained best.pt model
+  iou_thresh: 0.45
+  imgsz: 480                # 480p high FPS resolution for real-time performance
+  half: true                # fp16 GPU acceleration
+
+tracking:
+  tracker: "bytetrack.yaml" # native Ultralytics ByteTrack
+  track_lost_buffer: 30     # frames
+
+association:
+  containment_threshold: 0.20   # 0.20 containment for smooth person-cigarette association
+  association_margin: 0.05      # 0.05 margin to avoid over-filtering
+  use_iou_fallback: true       # iou fallback enabled for close proximity
+
+temporal:
+  window: 8                 # rolling window length (frames)
+  min_detections: 3         # >= 3 of 8 smoking frames -> CONFIRMED
+
+violation:
+  cooldown_seconds: 5.0     # time-based re-fire cooldown (robust to FPS)
+  evidence_frames: 6        # multi-frame snapshot size, saved ONLY on confirmation
+  annotated_evidence: true  # save evidence frames WITH detection boxes drawn on them
+
+zone:
+  # enabled=false  -> the WHOLE frame is treated as restricted, so a confirmed
+  #                   smoker triggers a violation + multi-frame evidence anywhere
+  #                   in view (best for getting it working / general monitoring).
+  # enabled=true   -> only smoking inside the polygon below is a violation;
+  #                   smoking outside becomes an INFORMATIONAL event (no evidence).
+  enabled: false
+  name: "No-Smoking Zone A"
+  # Normalized [0..1] polygon, scaled to the live frame size at runtime.
+  normalized_polygon:
+    - [0.15, 0.15]
+    - [0.85, 0.15]
+    - [0.85, 0.85]
+    - [0.15, 0.85]
+
+storage:
+  evidence_dir: "evidence"
+  database_url: "sqlite:///./visionguard.db"
