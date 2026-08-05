@@ -7,6 +7,14 @@ class ReviewIn(BaseModel):
     result: str                       # CONFIRMED | REJECTED
 
 
+class SettingsIn(BaseModel):
+    cig_conf: Optional[float] = None
+    person_conf: Optional[float] = None
+    min_detections: Optional[int] = None
+    cooldown_seconds: Optional[int] = None
+    require_zone: Optional[bool] = None
+
+
 class ViolationOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: int

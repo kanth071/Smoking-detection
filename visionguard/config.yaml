@@ -15,8 +15,8 @@ models:
   cigarette: "best.pt"      # Custom trained YOLO26 cigarette detection model
 
 detection:
-  person_conf: 0.35                # 0.35 confidence strictly detects human beings only
-  cig_conf: 0.25                # 0.25 standard confidence for trained best.pt model
+  person_conf: 0.30                # 0.30 confidence strictly detects human beings
+  cig_conf: 0.50                # 0.50 confidence strictly eliminates spectacle lenses, frames, pens & neck noise
   iou_thresh: 0.45
   imgsz: 480                # 480p high FPS resolution for real-time performance
   half: true                # fp16 GPU acceleration

@@ -3,213 +3,441 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>VisionGuard — Live Monitoring</title>
+<title>VisionGuard — Operations Console</title>
 <style>
   :root{
-    --bg:#0b1020; --panel:#121a33; --panel2:#0f1730; --line:#22305a;
-    --ink:#e8edfb; --muted:#93a0c4; --cobalt:#2f6bff; --cobalt-dim:#20408f;
-    --red:#ff4d5e; --green:#37d67a; --orange:#ffab2e; --yellow:#ffd23f;
+    --ink:#0b0f1a; --ink2:#0e1322; --surface:#141b2d; --surface2:#1a2236;
+    --line:#26304a; --line2:#33405f; --text:#e7ecf6; --muted:#8792ab; --faint:#5b6580;
+    --accent:#4c8dff; --accent-dim:#26467f; --teal:#39e0c9;
+    --danger:#ff5468; --warn:#f7b23b; --ok:#31d0aa;
+    --mono:ui-monospace,"JetBrains Mono","SF Mono",Menlo,Consolas,monospace;
+    --r:14px;
   }
   *{box-sizing:border-box}
-  body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
-       background:var(--bg);color:var(--ink)}
-  header{display:flex;align-items:center;gap:12px;padding:14px 22px;
-         border-bottom:1px solid var(--line);background:var(--panel2)}
-  header .logo{width:12px;height:12px;border-radius:50%;background:var(--cobalt);
-               box-shadow:0 0 12px var(--cobalt)}
-  header h1{font-size:18px;margin:0;letter-spacing:.3px}
-  header .sub{color:var(--muted);font-size:12px;margin-left:auto}
-  .wrap{display:grid;grid-template-columns:1.6fr 1fr;gap:18px;padding:18px 22px}
-  @media(max-width:1000px){.wrap{grid-template-columns:1fr}}
-  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden}
-  .card h2{font-size:13px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);
-           margin:0;padding:12px 16px;border-bottom:1px solid var(--line)}
-  .video{position:relative;background:#000;aspect-ratio:16/9;display:flex}
-  .video img{width:100%;height:100%;object-fit:contain}
-  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:14px 16px}
-  .stat{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px}
-  .stat .n{font-size:26px;font-weight:700}
-  .stat .l{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px}
-  .n.red{color:var(--red)} .n.green{color:var(--green)} .n.orange{color:var(--orange)}
+  html,body{margin:0;height:100%}
+  body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--ink);color:var(--text);
+    -webkit-font-smoothing:antialiased}
+  .eyebrow{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--accent);font-weight:700}
+  .mono{font-family:var(--mono)}
+  a{color:var(--accent);text-decoration:none}
+
+  /* ---- app shell ---- */
+  .app{display:grid;grid-template-columns:236px 1fr;min-height:100vh}
+  @media(max-width:820px){.app{grid-template-columns:64px 1fr}}
+
+  /* ---- sidebar rail ---- */
+  .sidebar{background:linear-gradient(180deg,var(--ink2),var(--ink));border-right:1px solid var(--line);
+    display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+  .brand{display:flex;align-items:center;gap:12px;padding:20px 18px;border-bottom:1px solid var(--line)}
+  .brand .mark{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--accent),var(--teal));
+    display:grid;place-items:center;flex:0 0 auto;box-shadow:0 0 20px rgba(76,141,255,.35)}
+  .brand .mark svg{width:19px;height:19px;stroke:#06101f}
+  .brand .txt b{display:block;font-size:15px;letter-spacing:.02em}
+  .brand .txt span{display:block;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--faint);margin-top:2px}
+  @media(max-width:820px){.brand .txt{display:none}}
+  .nav{padding:14px 12px;display:flex;flex-direction:column;gap:4px}
+  .navitem{display:flex;align-items:center;gap:12px;width:100%;background:none;border:0;cursor:pointer;
+    color:var(--muted);padding:11px 12px;border-radius:10px;font-size:13.5px;font-weight:600;text-align:left;
+    transition:background .15s,color .15s}
+  .navitem svg{width:18px;height:18px;stroke:currentColor;flex:0 0 auto}
+  .navitem:hover{background:var(--surface);color:var(--text)}
+  .navitem.active{background:linear-gradient(90deg,rgba(76,141,255,.16),rgba(76,141,255,.03));color:#fff}
+  .navitem.active::before{content:"";position:absolute;left:0;width:3px;height:24px;background:var(--accent);border-radius:0 3px 3px 0}
+  .navitem{position:relative}
+  @media(max-width:820px){.navitem span{display:none}.navitem{justify-content:center}}
+  .side-foot{margin-top:auto;padding:14px 12px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:10px}
+  .sysstat{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);padding:0 4px}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--faint);flex:0 0 auto}
+  .dot.on{background:var(--ok);box-shadow:0 0 8px var(--ok)}
+  .clearbtn{border:1px solid var(--line2);background:none;color:var(--muted);border-radius:9px;padding:9px;
+    font-size:12px;cursor:pointer;font-weight:600}
+  .clearbtn:hover{border-color:var(--danger);color:var(--danger)}
+  @media(max-width:820px){.side-foot .sysstat span,.clearbtn span{display:none}}
+
+  /* ---- main ---- */
+  .main{min-width:0;display:flex;flex-direction:column}
+  .topbar{display:flex;align-items:center;gap:16px;padding:18px 26px;border-bottom:1px solid var(--line);
+    background:rgba(14,19,34,.6);backdrop-filter:blur(6px);position:sticky;top:0;z-index:5}
+  .ptitle{font-size:20px;font-weight:700;letter-spacing:-.01em;margin-top:3px}
+  .topright{margin-left:auto;display:flex;align-items:center;gap:14px}
+  .clock{font-family:var(--mono);font-size:13px;color:var(--muted);letter-spacing:.04em}
+  .livepill{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:600;color:var(--muted);
+    border:1px solid var(--line);border-radius:999px;padding:6px 12px;background:var(--surface)}
+  .livepill::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--faint)}
+  .livepill.on{color:var(--ok);border-color:rgba(49,208,170,.4)}
+  .livepill.on::before{background:var(--ok);box-shadow:0 0 8px var(--ok);animation:pulse 1.6s infinite}
+  .livepill.warn{color:var(--warn);border-color:rgba(247,178,59,.4)}
+  .livepill.warn::before{background:var(--warn)}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+
+  .content{padding:22px 26px;max-width:1500px;width:100%}
+  .page{display:none;animation:fade .25s ease}
+  .page.active{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  @media(prefers-reduced-motion:reduce){*{animation:none!important}}
+
+  .grid2{display:grid;grid-template-columns:1.7fr 1fr;gap:20px}
+  @media(max-width:1040px){.grid2{grid-template-columns:1fr}}
+
+  /* ---- KPI cards ---- */
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+  @media(max-width:640px){.kpis{grid-template-columns:repeat(2,1fr)}}
+  .kpi{position:relative;background:linear-gradient(180deg,var(--surface2),var(--surface));border:1px solid var(--line);
+    border-radius:var(--r);padding:16px 16px 15px;overflow:hidden}
+  .kpi .top{display:flex;align-items:center;justify-content:space-between;color:var(--muted)}
+  .kpi .top svg{width:17px;height:17px;stroke:currentColor;opacity:.7}
+  .kpi .l{font-size:11px;letter-spacing:.14em;text-transform:uppercase}
+  .kpi .n{font-family:var(--mono);font-size:32px;font-weight:700;margin-top:8px;line-height:1}
+  .kpi::after{content:"";position:absolute;left:0;bottom:0;height:3px;width:100%;background:var(--line2);opacity:.5}
+  .kpi.blue::after{background:var(--accent)} .kpi.red::after{background:var(--danger)}
+  .kpi.green::after{background:var(--ok)} .kpi.amber::after{background:var(--warn)}
+  .kpi.red .n{color:var(--danger)} .kpi.green .n{color:var(--ok)} .kpi.amber .n{color:var(--warn)}
+
+  /* ---- cards ---- */
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+  .card>.hd{display:flex;align-items:center;gap:10px;padding:13px 16px;border-bottom:1px solid var(--line)}
+  .card>.hd .t{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700}
+  .card>.hd .r{margin-left:auto}
+
+  /* ---- monitor ---- */
+  .monitor{position:relative;background:radial-gradient(120% 90% at 50% 0%,#0c1424,#05080f);aspect-ratio:16/9;
+    display:flex;align-items:center;justify-content:center;overflow:hidden}
+  .monitor video,.monitor img{width:100%;height:100%;object-fit:contain;display:block}
+  .monitor canvas{position:absolute;inset:0;width:100%;height:100%}
+  .monitor .tick{position:absolute;width:16px;height:16px;border:2px solid rgba(76,141,255,.5)}
+  .monitor .tl{top:10px;left:10px;border-right:0;border-bottom:0}
+  .monitor .tr{top:10px;right:10px;border-left:0;border-bottom:0}
+  .monitor .bl{bottom:10px;left:10px;border-right:0;border-top:0}
+  .monitor .br{bottom:10px;right:10px;border-left:0;border-top:0}
+  .rec{position:absolute;top:12px;left:16px;display:flex;align-items:center;gap:7px;font-family:var(--mono);
+    font-size:11px;letter-spacing:.14em;color:#fff;text-shadow:0 1px 4px #000}
+  .rec i{width:9px;height:9px;border-radius:50%;background:var(--danger);box-shadow:0 0 8px var(--danger);animation:pulse 1.4s infinite}
+  .msg{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;
+    color:var(--muted);font-size:14px;line-height:1.6}
+
+  /* ---- table ---- */
   table{width:100%;border-collapse:collapse;font-size:13px}
-  th,td{padding:9px 12px;text-align:left;border-bottom:1px solid var(--line)}
-  th{color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.6px}
-  tbody tr:hover{background:var(--panel2)}
-  .pill{padding:2px 8px;border-radius:999px;font-size:11px;font-weight:600}
-  .pill.CONFIRMED{background:rgba(255,77,94,.15);color:var(--red)}
-  .pill.REJECTED{background:rgba(147,160,196,.15);color:var(--muted)}
-  .pill.POTENTIAL{background:rgba(255,171,46,.15);color:var(--orange)}
-  .pill.RESTRICTED_ZONE_SMOKING{background:rgba(255,77,94,.15);color:var(--red)}
-  .pill.INFORMATIONAL_SMOKING{background:rgba(47,107,255,.15);color:var(--cobalt)}
-  .btn{border:1px solid var(--line);background:var(--panel2);color:var(--ink);
-       padding:4px 10px;border-radius:8px;cursor:pointer;font-size:12px}
-  .btn:hover{border-color:var(--cobalt)}
-  .btn.ok:hover{border-color:var(--green);color:var(--green)}
-  .btn.no:hover{border-color:var(--red);color:var(--red)}
-  .analytics{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:14px 16px}
-  .bar{display:flex;align-items:center;gap:8px;margin:6px 0;font-size:12px}
-  .bar .track{flex:1;height:8px;background:var(--panel2);border-radius:6px;overflow:hidden}
-  .bar .fill{height:100%;background:var(--cobalt)}
-  .muted{color:var(--muted)} .empty{padding:22px 16px;color:var(--muted);font-size:13px}
-  .scroll{max-height:360px;overflow:auto}
-  a{color:var(--cobalt);text-decoration:none}
+  th,td{padding:10px 14px;text-align:left;border-bottom:1px solid var(--line)}
+  th{color:var(--faint);font-weight:700;font-size:10.5px;text-transform:uppercase;letter-spacing:.1em}
+  tbody tr{transition:background .12s}tbody tr:hover{background:var(--surface2)}
+  td .ref{font-family:var(--mono);font-weight:700;color:var(--text)}
+  td .id{font-family:var(--mono);color:var(--muted)}
+  .pill{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:999px;font-size:11px;font-weight:700;letter-spacing:.02em}
+  .pill.CONFIRMED,.pill.RESTRICTED_ZONE_SMOKING{background:rgba(255,84,104,.14);color:var(--danger)}
+  .pill.REJECTED{background:rgba(135,146,171,.14);color:var(--muted)}
+  .pill.POTENTIAL{background:rgba(247,178,59,.14);color:var(--warn)}
+  .pill.INFORMATIONAL_SMOKING{background:rgba(76,141,255,.14);color:var(--accent)}
+  .btn{border:1px solid var(--line2);background:var(--surface2);color:var(--text);padding:5px 12px;border-radius:8px;
+    cursor:pointer;font-size:12px;font-weight:600;transition:all .15s ease;display:inline-flex;align-items:center;gap:5px;
+    line-height:1.2;white-space:nowrap}
+  .btn svg{width:14px;height:14px;stroke-width:2.2;stroke:currentColor}
+  .btn:hover{border-color:var(--accent);transform:translateY(-1px)}
+  .btn.ok{background:rgba(49,208,170,.12);color:var(--ok);border:1px solid rgba(49,208,170,.35)}
+  .btn.ok:hover{background:var(--ok);color:#06101f;font-weight:700;border-color:var(--ok);box-shadow:0 0 12px rgba(49,208,170,.4)}
+  .btn.no{background:rgba(255,84,104,.12);color:var(--danger);border:1px solid rgba(255,84,104,.35)}
+  .btn.no:hover{background:var(--danger);color:#fff;font-weight:700;border-color:var(--danger);box-shadow:0 0 12px rgba(255,84,104,.4)}
+  .btn.del{background:rgba(135,146,171,.12);color:var(--muted);border:1px solid var(--line2)}
+  .btn.del:hover{background:rgba(255,84,104,.18);color:var(--danger);border-color:var(--danger);box-shadow:0 0 10px rgba(255,84,104,.3)}
+  .btn.primary{background:var(--accent);border-color:var(--accent);color:#06101f;font-weight:700}
+  .btn.primary:hover{filter:brightness(1.08)}
+  .btn-group{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+  .scroll{max-height:440px;overflow:auto}
+  .empty{padding:26px 16px;color:var(--faint);font-size:13px;text-align:center}
+
+  /* ---- analytics bars ---- */
+  .analytics{display:grid;grid-template-columns:1fr;gap:18px;padding:16px}
+  .bar{display:flex;align-items:center;gap:10px;margin:9px 0;font-size:12.5px}
+  .bar .k{width:150px;color:var(--text);font-weight:500;text-transform:capitalize}
+  .bar .track{flex:1;height:10px;background:var(--ink2);border:1px solid var(--line2);border-radius:6px;overflow:hidden;position:relative;display:block}
+  .bar .fill{display:block;height:100%;border-radius:6px;transition:width .6s ease}
+  .bar .fill-ok{background:linear-gradient(90deg,#31d0aa,#20b38c);box-shadow:0 0 10px rgba(49,208,170,.45)}
+  .bar .fill-danger{background:linear-gradient(90deg,#ff5468,#d9384d);box-shadow:0 0 10px rgba(255,84,104,.45)}
+  .bar .fill-warn{background:linear-gradient(90deg,#f7b23b,#d9931e);box-shadow:0 0 10px rgba(247,178,59,.45)}
+  .bar .fill-default{background:linear-gradient(90deg,#4c8dff,#39e0c9);box-shadow:0 0 10px rgba(76,141,255,.45)}
+  .bar b{font-family:var(--mono);min-width:65px;text-align:right}
+
+  /* ---- gallery ---- */
+  .gallery{padding:16px;display:flex;flex-direction:column;gap:16px}
+  .vgroup{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--ink2)}
+  .vgroup .head{display:flex;align-items:center;gap:10px;padding:11px 14px;background:var(--surface2);font-size:13px}
+  .vgroup .head .ref{font-family:var(--mono);font-weight:700}
+  .vgroup .head .meta{font-family:var(--mono);color:var(--faint);font-size:11.5px}
+  .thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(158px,1fr));gap:8px;padding:12px}
+  .thumbs img{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:8px;border:1px solid var(--line);
+    cursor:pointer;background:#000;transition:transform .15s,border-color .15s}
+  .thumbs img:hover{transform:scale(1.03);border-color:var(--accent)}
+
+  /* ---- settings ---- */
+  .settings{padding:8px 18px 18px;max-width:680px}
+  .srow{display:grid;grid-template-columns:230px 1fr 60px;align-items:center;gap:16px;padding:16px 0;border-bottom:1px solid var(--line)}
+  .srow label{font-size:13.5px;font-weight:600}.srow .desc{font-size:11.5px;color:var(--muted);margin-top:3px}
+  .srow input[type=range]{width:100%;accent-color:var(--accent)}
+  .srow .val{font-family:var(--mono);text-align:right;font-weight:700;font-size:15px;color:var(--accent)}
+  .switch{position:relative;width:46px;height:26px;display:inline-block}
+  .switch input{opacity:0;width:0;height:0}
+  .switch .sl{position:absolute;inset:0;background:var(--line2);border-radius:999px;transition:.2s;cursor:pointer}
+  .switch .sl::before{content:"";position:absolute;width:20px;height:20px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s}
+  .switch input:checked+.sl{background:var(--accent)}
+  .switch input:checked+.sl::before{transform:translateX(20px)}
+  .save-row{display:flex;align-items:center;gap:14px;padding-top:18px}
+  .save-row .msg-inline{font-size:12px;color:var(--ok);font-weight:600}
+
+  /* ---- lightbox ---- */
+  .lightbox{position:fixed;inset:0;background:rgba(3,6,12,.9);display:none;align-items:center;justify-content:center;z-index:50}
+  .lightbox.open{display:flex}.lightbox img{max-width:92vw;max-height:92vh;border-radius:10px;border:1px solid var(--line2)}
 </style>
 </head>
 <body>
-<header>
-  <div class="logo"></div>
-  <h1>VisionGuard</h1>
-  <div class="sub" id="statusline">connecting…</div>
-  <button class="btn no" style="margin-left:14px" onclick="clearData()">Clear past data</button>
-</header>
+<div class="app">
+  <!-- ============ SIDEBAR ============ -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="mark"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2"><path d="M12 3l7 3v6c0 4-3 6.5-7 9-4-2.5-7-5-7-9V6l7-3z"/><circle cx="12" cy="11" r="2.4"/></svg></div>
+      <div class="txt"><b>VisionGuard</b><span>Surveillance</span></div>
+    </div>
+    <nav class="nav">
+      <button class="navitem active" data-page="live"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M5.6 5.6a9 9 0 000 12.8M18.4 5.6a9 9 0 010 12.8M8.5 8.5a5 5 0 000 7M15.5 8.5a5 5 0 010 7"/></svg><span>Live Monitoring</span></button>
+      <button class="navitem" data-page="photos"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.6"/><path d="M4 17l4.5-4.5L13 17M13 14l3-3 5 5"/></svg><span>Violation Photos</span></button>
+      <button class="navitem" data-page="analytics"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><span>Analytics</span></button>
+      <button class="navitem" data-page="settings"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M18 18h2"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="16" cy="18" r="2"/></svg><span>Settings</span></button>
+    </nav>
+    <div class="side-foot">
+      <div class="sysstat"><span class="dot" id="sysdot"></span><span id="sysstat">detector offline</span></div>
+      <button class="clearbtn" onclick="clearData()">Clear past data</button>
+    </div>
+  </aside>
 
-<div class="wrap">
-  <div>
-    <div class="card">
-      <h2>Live processing</h2>
-      <div class="video"><img id="feed" src="/video_feed" alt="live feed"/></div>
-      <div class="stats">
-        <div class="stat"><div class="n" id="s-persons">0</div><div class="l">Persons</div></div>
-        <div class="stat"><div class="n red" id="s-smoking">0</div><div class="l">Smoking now</div></div>
-        <div class="stat"><div class="n green" id="s-fps">0</div><div class="l">FPS</div></div>
-        <div class="stat"><div class="n orange" id="s-confirmed">0</div><div class="l">Confirmed</div></div>
+  <!-- ============ MAIN ============ -->
+  <main class="main">
+    <div class="topbar">
+      <div>
+        <div class="eyebrow" id="page-eyebrow">Real-time</div>
+        <div class="ptitle" id="page-title">Live Monitoring</div>
+      </div>
+      <div class="topright">
+        <div class="clock mono" id="clock">--:--:--</div>
+        <div class="livepill" id="statusline">starting…</div>
       </div>
     </div>
 
-    <div class="card" style="margin-top:18px">
-      <h2>Analytics</h2>
-      <div class="analytics">
-        <div><div class="muted" style="font-size:11px;margin-bottom:6px">BY EVENT TYPE</div><div id="an-event"></div></div>
-        <div><div class="muted" style="font-size:11px;margin-bottom:6px">BY STATUS</div><div id="an-status"></div></div>
-      </div>
-    </div>
-  </div>
+    <div class="content">
+      <!-- ---- LIVE ---- -->
+      <section class="page active" id="page-live">
+        <div class="kpis">
+          <div class="kpi blue"><div class="top"><span class="l">Persons</span><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="9" cy="8" r="3"/><path d="M3 20a6 6 0 0112 0M16 6a3 3 0 010 6M21 20a6 6 0 00-4-5.6"/></svg></div><div class="n" id="s-persons">0</div></div>
+          <div class="kpi red"><div class="top"><span class="l">Smoking now</span><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 3v6M12 21a9 9 0 100-18"/><path d="M3 14h13v3H3z"/></svg></div><div class="n" id="s-smoking">0</div></div>
+          <div class="kpi green"><div class="top"><span class="l">Detect / s</span><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 20a8 8 0 10-8-8"/><path d="M12 12l4-3"/></svg></div><div class="n" id="s-fps">0</div></div>
+          <div class="kpi amber"><div class="top"><span class="l">Confirmed</span><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 3l7 3v6c0 4-3 6.5-7 9-4-2.5-7-5-7-9V6l7-3z"/><path d="M9 11l2 2 4-4"/></svg></div><div class="n" id="s-confirmed">0</div></div>
+        </div>
+        <div class="grid2">
+          <div class="card">
+            <div class="hd"><span class="t">Camera feed</span></div>
+            <div class="monitor" id="videowrap">
+              <video id="cam" autoplay muted playsinline></video>
+              <canvas id="overlay"></canvas>
+              <img id="serverfeed" style="display:none"/>
+              <div class="msg" id="videomsg" style="display:none"></div>
+              <span class="rec"><i></i>REC · LIVE</span>
+              <span class="tick tl"></span><span class="tick tr"></span><span class="tick bl"></span><span class="tick br"></span>
+            </div>
+          </div>
+          <div class="card">
+            <div class="hd"><span class="t">Recent violations</span></div>
+            <div class="scroll"><table><thead><tr><th>Ref</th><th>Type</th><th>ID</th><th>Status</th><th>Review</th></tr></thead>
+              <tbody id="rows-live"><tr><td colspan="5" class="empty">No violations detected.</td></tr></tbody></table></div>
+          </div>
+        </div>
+      </section>
 
-  <div class="card">
-    <h2>Violations &nbsp;·&nbsp; human review</h2>
-    <div class="scroll">
-      <table>
-        <thead><tr><th>Ref</th><th>Type</th><th>ID</th><th>Zone</th><th>Conf</th><th>Status</th><th>Evidence</th><th>Review</th></tr></thead>
-        <tbody id="rows"><tr><td colspan="8" class="empty">No violations yet.</td></tr></tbody>
-      </table>
+      <!-- ---- PHOTOS ---- -->
+      <section class="page" id="page-photos">
+        <div class="card"><div class="hd"><span class="t">Evidence photos</span></div>
+          <div class="gallery" id="gallery"><div class="empty">No evidence captured yet. A confirmed in-zone smoker saves a multi-frame photo set here.</div></div>
+        </div>
+      </section>
+
+      <!-- ---- ANALYTICS ---- -->
+      <section class="page" id="page-analytics">
+        <div class="grid2">
+          <div class="card"><div class="hd"><span class="t">Violation log</span></div>
+            <div class="scroll"><table>
+              <thead><tr><th>Ref</th><th>Type</th><th>ID</th><th>Zone</th><th>Conf</th><th>Status</th><th>Evidence</th><th>Review</th></tr></thead>
+              <tbody id="rows-full"><tr><td colspan="8" class="empty">No violations detected.</td></tr></tbody></table></div>
+          </div>
+          <div class="card"><div class="hd"><span class="t">Summary</span></div>
+            <div class="analytics">
+              <div><div class="eyebrow" style="color:var(--muted);margin-bottom:8px">By event type</div><div id="an-event"></div></div>
+              <div><div class="eyebrow" style="color:var(--muted);margin-bottom:8px">By status</div><div id="an-status"></div></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ---- SETTINGS ---- -->
+      <section class="page" id="page-settings">
+        <div class="card"><div class="hd"><span class="t">Detection settings</span><span class="r" style="font-size:11px;color:var(--faint)">applies live · no restart</span></div>
+          <div class="settings" id="settings">
+            <div class="srow"><div><label>Cigarette confidence</label><div class="desc">Raise this to stop fingers and pens being flagged</div></div>
+              <input type="range" id="set-cig" min="0.05" max="0.9" step="0.05"><div class="val" id="val-cig">–</div></div>
+            <div class="srow"><div><label>Person confidence</label><div class="desc">Minimum confidence to count a person</div></div>
+              <input type="range" id="set-person" min="0.1" max="0.9" step="0.05"><div class="val" id="val-person">–</div></div>
+            <div class="srow"><div><label>Frames to confirm</label><div class="desc">Smoking frames (of the window) before flagging</div></div>
+              <input type="range" id="set-min" min="1" max="8" step="1"><div class="val" id="val-min">–</div></div>
+            <div class="srow"><div><label>Re-flag cooldown</label><div class="desc">Seconds before the same person is flagged again</div></div>
+              <input type="range" id="set-cool" min="1" max="30" step="1"><div class="val" id="val-cool">–</div></div>
+            <div class="srow"><div><label>Restrict to zone</label><div class="desc">Off means the whole frame is restricted — evidence saves anywhere</div></div>
+              <label class="switch"><input type="checkbox" id="set-zone"><span class="sl"></span></label><div></div></div>
+            <div class="save-row"><button class="btn primary" onclick="saveSettings()">Apply settings</button>
+              <span class="msg-inline" id="set-msg"></span></div>
+          </div>
+        </div>
+      </section>
     </div>
-  </div>
+  </main>
 </div>
 
-<!-- Evidence Modal Viewer -->
-<div id="ev-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9999;align-items:center;justify-content:center;padding:20px;" onclick="closeModal(event)">
-  <div style="background:var(--panel);border:1px solid var(--line);border-radius:16px;max-width:950px;width:100%;max-height:90vh;overflow:auto;padding:20px;position:relative;" onclick="event.stopPropagation()">
-    <div style="display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:16px;">
-      <h3 id="ev-modal-title" style="margin:0;font-size:16px;color:var(--ink);">Evidence Snapshots</h3>
-      <button class="btn no" onclick="document.getElementById('ev-modal').style.display='none'" style="font-weight:bold;font-size:14px;padding:4px 12px;">✕ Close</button>
-    </div>
-    <div id="ev-modal-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;"></div>
-  </div>
-</div>
+<div class="lightbox" id="lightbox" onclick="this.classList.remove('open')"><img id="lightimg"/></div>
 
 <script>
 async function j(u,o){const r=await fetch(u,o);if(!r.ok)throw new Error(r.status);return r.json();}
+const $=id=>document.getElementById(id);
+const TITLES={live:['Real-time','Live Monitoring'],photos:['Evidence','Violation Photos'],
+  analytics:['Insights','Analytics'],settings:['Configuration','Detection Settings']};
 
-function showEvidence(ref, count){
-  const grid = document.getElementById('ev-modal-grid');
-  document.getElementById('ev-modal-title').textContent = `Violation ${ref} — ${count} Evidence Frame(s)`;
-  grid.innerHTML = '';
-  for(let i=0; i<count; i++){
-    const idx = String(i).padStart(2, '0');
-    const url = `/evidence/${ref}/frame_${idx}.jpg`;
-    grid.innerHTML += `
-      <div style="background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:8px;text-align:center;">
-        <div style="font-size:11px;color:var(--muted);margin-bottom:6px;font-weight:600;">FRAME ${idx} (Red Mark Box)</div>
-        <a href="${url}" target="_blank">
-          <img src="${url}" style="width:100%;border-radius:8px;border:2px solid var(--red);display:block;object-fit:cover;" alt="frame ${idx}"/>
-        </a>
-        <div style="font-size:10px;color:var(--muted);margin-top:4px;">Tap image to view full-res</div>
-      </div>`;
-  }
-  document.getElementById('ev-modal').style.display = 'flex';
-}
+document.querySelectorAll('.navitem[data-page]').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('.navitem[data-page]').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active');
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  const pg=b.dataset.page; $('page-'+pg).classList.add('active');
+  $('page-eyebrow').textContent=TITLES[pg][0]; $('page-title').textContent=TITLES[pg][1];
+  if(pg==='photos') refreshGallery();
+});
 
-function closeModal(e){
-  document.getElementById('ev-modal').style.display = 'none';
-}
+// clock
+setInterval(()=>{const d=new Date();$('clock').textContent=d.toLocaleTimeString([],{hour12:false});},1000);
 
-async function refreshStats(){
+const cam=$('cam'),overlay=$('overlay'),ctx=overlay.getContext('2d'),msg=$('videomsg');
+let detectCount=0,lastFpsT=performance.now(),busy=false;
+function setStatus(t,cls){const s=$('statusline');s.textContent=t;s.className='livepill '+(cls||'');}
+function showMsg(html){msg.style.display='flex';msg.innerHTML=html;cam.style.display='none';overlay.style.display='none';}
+function setDetector(on){$('sysdot').className='dot'+(on?' on':'');$('sysstat').textContent=on?'detector online':'detector offline (no best.pt)';}
+
+async function startBrowserCamera(){
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){
+    showMsg("Camera blocked. Open this on <b>localhost</b> or over <b>https</b> — use <b>http://localhost:8000</b> on the camera machine.");setStatus('camera blocked','warn');return;}
   try{
-    const s=await j('/api/stats');
-    s_persons.textContent=s.persons; s_smoking.textContent=s.smoking;
-    s_fps.textContent=s.fps; s_confirmed.textContent=s.confirmed;
-    statusline.textContent = s.detecting ? 'detection active' : 'streaming (no model/camera)';
-    statusline.style.color = s.detecting ? 'var(--green)' : 'var(--orange)';
-  }catch(e){ statusline.textContent='offline'; statusline.style.color='var(--red)'; }
+    const s=await navigator.mediaDevices.getUserMedia({video:{width:{ideal:1280},height:{ideal:720}},audio:false});
+    cam.srcObject=s;await cam.play();setStatus('monitoring','on');
+    setInterval(detectTick,350);
+  }catch(e){
+    if(e.name==='NotAllowedError'){showMsg("Camera permission denied. Click the camera icon in the address bar, choose Allow, then reload.");setStatus('permission denied','warn');}
+    else if(e.name==='NotFoundError'){showMsg("No camera found on this device.");setStatus('no camera','warn');}
+    else{showMsg("Could not start camera: "+e.name);setStatus('camera error','warn');}
+  }
+}
+async function detectTick(){
+  if(busy||cam.readyState<2)return;busy=true;
+  try{
+    const vw=cam.videoWidth,vh=cam.videoHeight;overlay.width=vw;overlay.height=vh;
+    const off=document.createElement('canvas');off.width=vw;off.height=vh;off.getContext('2d').drawImage(cam,0,0,vw,vh);
+    const blob=await new Promise(r=>off.toBlob(r,'image/jpeg',0.7));
+    const res=await j('/api/detect',{method:'POST',headers:{'Content-Type':'image/jpeg'},body:blob});
+    drawDet(res);setDetector(res.detecting);
+    $('s-persons').textContent=res.counts.persons;$('s-smoking').textContent=res.counts.smoking;$('s-confirmed').textContent=res.counts.confirmed;
+    detectCount++;const now=performance.now();
+    if(now-lastFpsT>1000){$('s-fps').textContent=detectCount;detectCount=0;lastFpsT=now;}
+    setStatus(res.detecting?'monitoring':'monitoring · no model',res.detecting?'on':'warn');
+    if(res.new_confirmed>0)refreshData();
+  }catch(e){}
+  busy=false;
+}
+function drawDet(res){
+  ctx.clearRect(0,0,overlay.width,overlay.height);
+  ctx.lineWidth=Math.max(2,overlay.width/380);ctx.font=`600 ${Math.max(13,overlay.width/58)}px system-ui`;
+  for(const c of res.cigarettes){const[x1,y1,x2,y2]=c.box;ctx.strokeStyle='#f7b23b';ctx.fillStyle='#f7b23b';ctx.strokeRect(x1,y1,x2-x1,y2-y1);ctx.fillText(`cig ${c.conf}`,x1,Math.max(14,y1-5));}
+  for(const p of res.persons){const[x1,y1,x2,y2]=p.box;const col=p.smoking?'#ff5468':'#31d0aa';ctx.strokeStyle=col;ctx.fillStyle=col;ctx.strokeRect(x1,y1,x2-x1,y2-y1);ctx.fillText(`#${p.id} ${p.conf}`,x1,Math.max(14,y1-5));}
+}
+function startServerFeed(){
+  cam.style.display='none';overlay.style.display='none';const img=$('serverfeed');img.style.display='block';img.src='/video_feed';
+  setStatus('monitoring','on');
+  setInterval(async()=>{try{const s=await j('/api/stats');setDetector(s.detecting);
+    $('s-persons').textContent=s.persons;$('s-smoking').textContent=s.smoking;$('s-fps').textContent=s.fps;$('s-confirmed').textContent=s.confirmed;}catch(e){}},1000);
 }
 
-function bars(obj,total,el){
+let LAST=[];
+function bars(obj, total, el, defaultKeys=[]){
   el.innerHTML='';
   const entries=Object.entries(obj||{});
-  if(!entries.length){el.innerHTML='<div class="muted" style="font-size:12px">—</div>';return;}
-  for(const [k,v] of entries){
-    const pct=total?Math.round(v/total*100):0;
+  let displayData=entries;
+  if(!displayData.length && defaultKeys.length){
+    displayData=defaultKeys.map(k=>[k, 0]);
+  }
+  const groupTotal=displayData.reduce((acc,[,val])=>acc+val,0)||(total||1);
+  for(const[k,v] of displayData){
+    const pct=groupTotal>0?Math.round((v/groupTotal)*100):0;
+    const keyLower=k.toLowerCase().replace(/_/g,' ');
+    let fillClass='fill-default';
+    if(keyLower.includes('confirm'))fillClass='fill-ok';
+    else if(keyLower.includes('reject'))fillClass='fill-danger';
+    else if(keyLower.includes('potential'))fillClass='fill-warn';
+    else if(keyLower.includes('restricted'))fillClass='fill-danger';
     el.insertAdjacentHTML('beforeend',
-      `<div class="bar"><span style="width:120px" class="muted">${k}</span>
-       <span class="track"><span class="fill" style="width:${pct}%"></span></span>
-       <b>${v}</b></div>`);
+      `<div class="bar">`
+      +`<span class="k">${keyLower}</span>`
+      +`<span class="track"><span class="fill ${fillClass}" style="width:${Math.max(pct, v>0?6:4)}%"></span></span>`
+      +`<b>${v} <small style="color:var(--faint);font-weight:400;font-size:11px">(${pct}%)</small></b>`
+      +`</div>`
+    );
   }
 }
 
 async function refreshData(){
   try{
-    const vs=await j('/api/violations?limit=100');
-    const rows=document.getElementById('rows');
-    if(!vs.length){rows.innerHTML='<tr><td colspan="8" class="empty">No violations yet.</td></tr>';}
-    else{
-      rows.innerHTML=vs.map(v=>{
-        const ev = v.num_evidence_frames > 0
-          ? `<div style="display:flex;gap:4px;align-items:center;">
-               ${Array.from({length: v.num_evidence_frames}, (_, i) => {
-                 const idx = String(i).padStart(2, '0');
-                 const url = `/evidence/${v.ref}/frame_${idx}.jpg`;
-                 return `<a href="#" onclick="showEvidence('${v.ref}', ${v.num_evidence_frames}); return false;" title="Red-Mark Box Frame ${idx}">
-                           <img src="${url}" style="width:52px;height:38px;object-fit:cover;border:1.5px solid var(--red);border-radius:4px;" alt="frame ${idx}"/>
-                         </a>`;
-               }).join('')}
-             </div>`
-          : '<span class="muted">—</span>';
-        const review = (v.status==='POTENTIAL'||v.status==='CONFIRMED'&&!v.reviewed_at)
-          ? `<button class="btn ok" onclick="review(${v.id},'CONFIRMED')">✓</button>
-             <button class="btn no" onclick="review(${v.id},'REJECTED')">✕</button>`
-          : `<span class="muted">${v.review_result||''}</span>`;
-        return `<tr>
-          <td><b>${v.ref}</b></td>
-          <td><span class="pill ${v.event_type}">${(v.event_type||'').replace('_SMOKING','')}</span></td>
-          <td>#${v.person_track_id}</td>
-          <td>${v.zone||'—'}</td>
-          <td>${v.confidence!=null?v.confidence.toFixed(2):'—'}</td>
-          <td><span class="pill ${v.status}">${v.status}</span></td>
-          <td>${ev}</td>
-          <td>${review}</td></tr>`;
-      }).join('');
-    }
+    const vs=await j('/api/violations?limit=100');LAST=vs;
+    $('rows-live').innerHTML=vs.length?vs.slice(0,20).map(v=>`<tr><td><span class="ref">${v.ref}</span></td><td><span class="pill ${v.event_type}">${(v.event_type||'').replace('_SMOKING','')}</span></td><td><span class="id">#${v.person_track_id}</span></td><td><span class="pill ${v.status}">${v.status}</span></td><td>${reviewBtns(v)}</td></tr>`).join('')
+      :'<tr><td colspan="5" class="empty">No violations detected.</td></tr>';
+    $('rows-full').innerHTML=vs.length?vs.map(v=>{const ev=v.num_evidence_frames>0?`<a href="/evidence/${v.ref}/frame_00.jpg" target="_blank">${v.num_evidence_frames} imgs</a>`:'—';
+      return `<tr><td><span class="ref">${v.ref}</span></td><td><span class="pill ${v.event_type}">${(v.event_type||'').replace('_SMOKING','')}</span></td><td><span class="id">#${v.person_track_id}</span></td><td>${v.zone||'—'}</td><td class="mono">${v.confidence!=null?v.confidence.toFixed(2):'—'}</td><td><span class="pill ${v.status}">${v.status}</span></td><td>${ev}</td><td>${reviewBtns(v)}</td></tr>`;}).join('')
+      :'<tr><td colspan="8" class="empty">No violations detected.</td></tr>';
     const a=await j('/api/analytics');
-    bars(a.by_event_type,a.total,document.getElementById('an-event'));
-    bars(a.by_status,a.total,document.getElementById('an-status'));
+    bars(a.by_event_type,a.total,$('an-event'),['RESTRICTED_ZONE_SMOKING','INFORMATIONAL_SMOKING']);
+    bars(a.by_status,a.total,$('an-status'),['CONFIRMED','REJECTED','POTENTIAL']);
+    if($('page-photos').classList.contains('active'))refreshGallery();
   }catch(e){}
 }
 
-async function review(id,result){
-  try{ await j(`/api/violations/${id}/review`,{method:'PATCH',
-       headers:{'Content-Type':'application/json'},body:JSON.stringify({result})});
-       refreshData(); }catch(e){}
+function reviewBtns(v){return (v.status==='POTENTIAL'||(v.status==='CONFIRMED'&&!v.reviewed_at))
+  ?`<div class="btn-group"><button class="btn ok" onclick="review(${v.id},'CONFIRMED')"><svg viewBox="0 0 24 24" fill="none"><polyline points="20 6 9 17 4 12"/></svg>Confirm</button><button class="btn no" onclick="review(${v.id},'REJECTED')"><svg viewBox="0 0 24 24" fill="none"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>Reject</button></div>`
+  :`<span class="pill ${v.review_result||v.status}">${v.review_result||v.status}</span>`;}
+
+function refreshGallery(){
+  const g=$('gallery');const wp=LAST.filter(v=>v.num_evidence_frames>0);
+  if(!wp.length){g.innerHTML='<div class="empty">No evidence captured yet. A confirmed in-zone smoker saves a multi-frame photo set here.</div>';return;}
+  g.innerHTML=wp.map(v=>{let t='';for(let i=0;i<v.num_evidence_frames;i++){const u=`/evidence/${v.ref}/frame_${String(i).padStart(2,'0')}.jpg`;t+=`<img src="${u}" onclick="lb('${u}')" onerror="this.style.display='none'"/>`;}
+    return `<div class="vgroup"><div class="head"><span class="ref">${v.ref}</span><span class="pill ${v.event_type}">${(v.event_type||'').replace('_SMOKING','')}</span><span class="meta">person #${v.person_track_id} · ${v.video_timestamp||''} · ${v.num_evidence_frames} frames</span><span style="margin-left:auto">${reviewBtns(v)}</span></div><div class="thumbs">${t}</div></div>`;}).join('');
+}
+function lb(u){$('lightimg').src=u;$('lightbox').classList.add('open');}
+async function review(id,result){try{await j(`/api/violations/${id}/review`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({result})});refreshData();if($('page-photos').classList.contains('active'))setTimeout(refreshGallery,150);}catch(e){}}
+async function deleteItem(id){try{await fetch(`/api/violations/${id}`,{method:'DELETE'});LAST=LAST.filter(v=>v.id!==id);refreshData();if($('page-photos').classList.contains('active'))refreshGallery();}catch(e){}}
+async function clearData(){if(!confirm('Delete all past violations and their evidence photos?'))return;try{await fetch('/api/violations',{method:'DELETE'});LAST=[];refreshData();refreshGallery();}catch(e){}}
+
+async function loadSettings(){try{const c=await j('/api/config');
+  $('set-cig').value=c.cig_conf;$('val-cig').textContent=(+c.cig_conf).toFixed(2);
+  $('set-person').value=c.person_conf;$('val-person').textContent=(+c.person_conf).toFixed(2);
+  $('set-min').value=c.min_detections;$('val-min').textContent=c.min_detections;
+  $('set-cool').value=c.cooldown_seconds;$('val-cool').textContent=c.cooldown_seconds;
+  $('set-zone').checked=c.require_zone;setDetector(c.detecting);}catch(e){}}
+[['set-cig','val-cig',2],['set-person','val-person',2],['set-min','val-min',0],['set-cool','val-cool',0]].forEach(([s,v,d])=>{
+  $(s).addEventListener('input',()=>$(v).textContent=d?(+$(s).value).toFixed(d):$(s).value);});
+async function saveSettings(){
+  const body={cig_conf:+$('set-cig').value,person_conf:+$('set-person').value,min_detections:+$('set-min').value,cooldown_seconds:+$('set-cool').value,require_zone:$('set-zone').checked};
+  try{await j('/api/settings',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    $('set-msg').textContent='Settings applied';setTimeout(()=>$('set-msg').textContent='',2200);}catch(e){$('set-msg').style.color='var(--danger)';$('set-msg').textContent='Could not apply';}
 }
 
-async function clearData(){
-  if(!confirm('Delete ALL past violations and their evidence images?'))return;
-  try{ await fetch('/api/violations',{method:'DELETE'}); refreshData(); refreshStats(); }
-  catch(e){}
-}
-
-setInterval(refreshStats,1000);
-setInterval(refreshData,2500);
-refreshStats(); refreshData();
+(async function(){let mode='browser';try{mode=(await j('/api/config')).capture_mode;}catch(e){}
+  if(mode==='server')startServerFeed();else startBrowserCamera();
+  loadSettings();refreshData();setInterval(refreshData,3000);})();
 </script>
 </body>
 </html>

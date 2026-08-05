@@ -1,16 +1,14 @@
 """
 Detector — the two-model pipeline.
 
-  Person   : pretrained COCO YOLOv11 (yolo11s.pt) with NATIVE ByteTrack (.track)
+  Person   : pretrained COCO YOLOv11 (yolo11s.pt) with NATIVE ByteTrack (.track) + predict fallback
   Cigarette: custom YOLOv11 (best.pt) with .predict
   Link     : spatial containment (fraction of cigarette box inside a person box),
              disambiguated by ASSOCIATION_MARGIN so a cigarette between two people
              is only assigned when one owner clearly wins.
-
-Ultralytics is imported lazily and guarded: if it (or best.pt) is unavailable
-the app still boots and streams the camera — detection is simply skipped, so the
-dashboard is never dead. Real detection needs ultralytics + best.pt present.
 """
+import os
+import numpy as np
 
 
 def containment(small, large):
@@ -35,65 +33,90 @@ def iou(a, b):
     return inter / (areaA + areaB - inter + 1e-6)
 
 
+def filter_false_positives(c_box, conf, persons):
+    """Strictly filter out spectacle lenses, glasses frames, pens, spectacle stems, neck shadow folds, and noise."""
+    if conf < 0.48:  # Strictly rejects spectacle lens/frame noise (0.36, 0.39, 0.42, 0.46)
+        return False
+
+    w = max(0.0, c_box[2] - c_box[0])
+    h = max(0.0, c_box[3] - c_box[1])
+    area = w * h
+    if w < 7 or h < 7 or area < 50:  # Rejects tiny noise patches
+        return False
+
+    aspect = max(w, h) / (min(w, h) + 1e-5)
+    if aspect > 7.0:  # Rejects thin lines (cable, pen stem, spectacle arm)
+        return False
+
+    c_cx = (c_box[0] + c_box[2]) / 2.0
+    c_cy = (c_box[1] + c_box[3]) / 2.0
+
+    for p in persons:
+        px1, py1, px2, py2 = p["box"]
+        pw = px2 - px1
+        ph = py2 - py1
+        if pw <= 0 or ph <= 0:
+            continue
+
+        # Relative coordinates inside person box
+        rel_y = (c_cy - py1) / ph
+
+        # 1. HARD EXCLUSION: EYE & SPECTACLES & GLASSES FRAME & TEMPLES ZONE (Upper 47% of person box)
+        # Spectacle lenses, nose bridge curve, glasses stems, temples, eyes, ears, and hair are strictly in upper 47%
+        if rel_y < 0.47:
+            return False
+
+        # 2. HARD EXCLUSION: NECK & COLLAR SHADOW FOLDS (Lower neck region rel_y > 0.65)
+        if rel_y > 0.65 and aspect < 1.45:
+            return False
+
+        # 3. VALID SMOKING REGION (Strictly Mouth, Lips, Lower Jaw & Hand to Mouth: rel_y 0.47 to 0.65)
+        exp_x1 = px1 - 0.12 * pw
+        exp_x2 = px2 + 0.12 * pw
+        exp_y1 = py1 + 0.47 * ph
+        exp_y2 = py1 + 0.65 * ph
+
+        if (exp_x1 <= c_cx <= exp_x2) and (exp_y1 <= c_cy <= exp_y2):
+            return True
+
+    return False
+
+
 def associate(persons, cigarettes, threshold=0.10, margin=0.05, use_iou_fallback=True):
-    """Return the set of person track_ids that own a verified cigarette detection."""
+    """Return the set of person track_ids that own a verified cigarette detection with spatial overlap."""
     smoking = set()
     if not cigarettes or not persons:
         return smoking
 
     for cig in cigarettes:
         c_box = cig["box"]
-        c_cx = (c_box[0] + c_box[2]) / 2.0
-        c_cy = (c_box[1] + c_box[3]) / 2.0
-
         valid_persons = []
         for p in persons:
             p_box = p["box"]
             score = containment(c_box, p_box)
             i_score = iou(c_box, p_box)
             max_score = max(score, i_score)
-            valid_persons.append((max_score, p))
+            if max_score >= threshold:  # Must have genuine spatial overlap with person box!
+                valid_persons.append((max_score, p))
 
-        # Sort by overlap score
-        scored = sorted(valid_persons, key=lambda t: t[0], reverse=True)
-        best_score, best_p = scored[0]
-
-        if best_score > 0:
+        if valid_persons:
+            scored = sorted(valid_persons, key=lambda t: t[0], reverse=True)
+            best_score, best_p = scored[0]
             smoking.add(best_p["id"])
-        else:
-            # Fallback: link to closest person within frame distance
-            closest_p = None
-            min_dist = float("inf")
-            for p in persons:
-                p_box = p["box"]
-                p_cx = (p_box[0] + p_box[2]) / 2.0
-                p_cy = (p_box[1] + p_box[3]) / 2.0
-                dist = (c_cx - p_cx)**2 + (c_cy - p_cy)**2
-                if dist < min_dist:
-                    min_dist = dist
-                    closest_p = p
-            if closest_p is not None:
-                smoking.add(closest_p["id"])
 
     return smoking
 
-
-import os
 
 def resolve_path(p):
     if not p or not isinstance(p, str):
         return p
     if os.path.exists(p):
         return p
-    # Check parent dir (workspace root)
     parent_p = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), p)
     if os.path.exists(parent_p):
         return parent_p
-    # Check visionguard dir
-    vg_p = os.path.join(os.path.dirname(os.path.abspath(__file__)), p)
-    if os.path.exists(vg_p):
-        return vg_p
     return p
+
 
 class Detector:
     def __init__(self, cfg):
@@ -118,7 +141,6 @@ class Detector:
 
     def _load(self):
         try:
-            import os
             os.environ["CUDA_VISIBLE_DEVICES"] = "0"
             from ultralytics import YOLO
             try:
@@ -138,22 +160,36 @@ class Detector:
                 self.cig_model = YOLO(cig_path)
             except Exception as e:
                 print(f"[detector] cigarette model not loaded ({e}); person-only mode")
+
             self.ready = True
             print(f"[detector] ready | device={self.device} half={self.half}")
         except Exception as e:
-            print(f"[detector] ultralytics unavailable ({e}); running WITHOUT detection")
+            print(f"[detector] error loading models: {e}")
             self.ready = False
 
-    def infer(self, frame):
-        """Return (persons, cigarettes, smoking_ids, confidences)."""
+    def detect(self, frame):
         if not self.ready or self.person_model is None:
             return [], [], set(), {}
 
-        pr = self.person_model.track(
-            frame, persist=True, tracker=self.tracker, classes=[0],
-            conf=self.person_conf, iou=self.iou_thresh, imgsz=self.imgsz,
-            device=self.device, half=self.half, verbose=False,
-        )
+        pr = None
+        try:
+            pr = self.person_model.track(
+                frame, persist=True, tracker=self.tracker, classes=[0],
+                conf=self.person_conf, iou=self.iou_thresh, imgsz=self.imgsz,
+                device=self.device, half=self.half, verbose=False,
+            )
+        except Exception:
+            pass
+
+        if not pr or not pr[0].boxes or len(pr[0].boxes) == 0:
+            try:
+                pr = self.person_model.predict(
+                    frame, classes=[0], conf=self.person_conf, iou=self.iou_thresh,
+                    imgsz=self.imgsz, device=self.device, half=self.half, verbose=False,
+                )
+            except Exception:
+                pass
+
         persons = []
         r = pr[0] if pr else None
         if r is not None and r.boxes is not None and len(r.boxes) > 0:
@@ -163,11 +199,10 @@ class Detector:
             ids = (r.boxes.id.cpu().numpy().astype(int)
                    if r.boxes.id is not None else list(range(len(xyxys))))
             for xyxy, conf, tid, cls_id in zip(xyxys, confs, ids, clss):
-                if cls_id == 0:  # Strictly human persons only (COCO class 0)
+                if cls_id == 0:
                     persons.append({"box": xyxy.tolist(), "conf": float(conf), "id": int(tid)})
 
         cigarettes = []
-        # Only run cigarette detector if persons are detected in frame for maximum FPS
         if self.cig_model is not None and len(persons) > 0:
             cr = self.cig_model.predict(
                 frame, conf=self.cig_conf, iou=self.iou_thresh,
@@ -176,10 +211,15 @@ class Detector:
             c0 = cr[0] if cr else None
             if c0 is not None and c0.boxes is not None and len(c0.boxes) > 0:
                 for b in c0.boxes:
-                    cigarettes.append({"box": b.xyxy[0].cpu().numpy().tolist(),
-                                       "conf": float(b.conf[0].cpu())})
+                    c_box = b.xyxy[0].cpu().numpy().tolist()
+                    c_conf = float(b.conf[0].cpu())
+                    if filter_false_positives(c_box, c_conf, persons):
+                        cigarettes.append({"box": c_box, "conf": c_conf})
 
         smoking = associate(persons, cigarettes, self.threshold, self.margin,
                             self.use_iou_fallback)
         confidences = {p["id"]: p["conf"] for p in persons}
         return persons, cigarettes, smoking, confidences
+
+    def infer(self, frame):
+        return self.detect(frame)

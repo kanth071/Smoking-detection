@@ -183,8 +183,46 @@ def stats():
 
 @app.get("/api/config")
 def get_config():
-    return {"capture_mode": CAPTURE_MODE, "detecting": detector.ready,
-            "zone_enabled": REQUIRE_ZONE}
+    return {
+        "capture_mode": CAPTURE_MODE,
+        "detecting": detector.ready,
+        "zone_enabled": engine.require_zone,
+        "require_zone": engine.require_zone,
+        "cig_conf": getattr(detector, "cig_conf", 0.25),
+        "person_conf": getattr(detector, "person_conf", 0.35),
+        "min_detections": getattr(engine, "min_detections", 3),
+        "cooldown_seconds": getattr(engine, "cooldown_seconds", 10),
+    }
+
+
+@app.api_route("/api/settings", methods=["POST", "PATCH", "PUT"])
+def update_settings(body: schemas.SettingsIn):
+    global REQUIRE_ZONE
+    if body.cig_conf is not None:
+        detector.cig_conf = float(body.cig_conf)
+        CFG["detection"]["cig_conf"] = float(body.cig_conf)
+    if body.person_conf is not None:
+        detector.person_conf = float(body.person_conf)
+        CFG["detection"]["person_conf"] = float(body.person_conf)
+    if body.min_detections is not None:
+        engine.min_detections = int(body.min_detections)
+        CFG["temporal"]["min_detections"] = int(body.min_detections)
+    if body.cooldown_seconds is not None:
+        engine.cooldown_seconds = int(body.cooldown_seconds)
+        CFG["violation"]["cooldown_seconds"] = int(body.cooldown_seconds)
+    if body.require_zone is not None:
+        engine.require_zone = bool(body.require_zone)
+        REQUIRE_ZONE = bool(body.require_zone)
+        CFG["zone"]["enabled"] = bool(body.require_zone)
+
+    return {
+        "status": "ok",
+        "cig_conf": detector.cig_conf,
+        "person_conf": detector.person_conf,
+        "min_detections": engine.min_detections,
+        "cooldown_seconds": engine.cooldown_seconds,
+        "require_zone": engine.require_zone,
+    }
 
 
 # ── violations REST ───────────────────────────────────────────────────
@@ -219,6 +257,23 @@ def review(vid: int, body: schemas.ReviewIn, db: Session = Depends(get_db)):
     v.reviewed_at = datetime.utcnow()
     db.commit(); db.refresh(v)
     return v
+
+
+@app.delete("/api/violations/{vid}")
+def delete_single_violation(vid: int, db: Session = Depends(get_db)):
+    """Remove a single violation record and its evidence folder on disk."""
+    import shutil
+    v = db.get(models.Violation, vid)
+    if not v:
+        raise HTTPException(404, "not found")
+    ref = v.ref
+    db.delete(v)
+    db.commit()
+    if ref and os.path.isdir(EVIDENCE_ROOT):
+        p = os.path.join(EVIDENCE_ROOT, ref)
+        if os.path.isdir(p):
+            shutil.rmtree(p, ignore_errors=True)
+    return {"deleted": 1, "id": vid, "ref": ref}
 
 
 @app.delete("/api/violations")
