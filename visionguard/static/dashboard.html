@@ -76,8 +76,8 @@
   @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
   @media(prefers-reduced-motion:reduce){*{animation:none!important}}
 
-  .grid2{display:grid;grid-template-columns:1.7fr 1fr;gap:20px}
-  @media(max-width:1040px){.grid2{grid-template-columns:1fr}}
+  .grid2{display:grid;grid-template-columns:1.2fr 1fr;gap:20px}
+  @media(max-width:1100px){.grid2{grid-template-columns:1fr}}
 
   /* ---- KPI cards ---- */
   .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
@@ -122,33 +122,33 @@
   ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
 
   /* ---- table ---- */
-  .scroll { max-height: 440px; overflow-x: auto; overflow-y: auto; border-radius: 0 0 var(--r) var(--r); }
-  table { width: 100%; min-width: 560px; border-collapse: collapse; font-size: 13px; table-layout: auto; }
-  th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--line); vertical-align: middle; }
-  th { color: var(--faint); font-weight: 700; font-size: 10.5px; text-transform: uppercase; letter-spacing: .08em; white-space: nowrap; }
+  .scroll { max-height: 440px; overflow-x: auto; overflow-y: auto; border-radius: 0 0 var(--r) var(--r); width: 100%; }
+  table { width: 100%; min-width: 500px; border-collapse: collapse; font-size: 12.5px; table-layout: auto; }
+  th, td { padding: 9px 8px; text-align: left; border-bottom: 1px solid var(--line); vertical-align: middle; }
+  th { color: var(--faint); font-weight: 700; font-size: 10px; text-transform: uppercase; letter-spacing: .06em; white-space: nowrap; }
   tbody tr { transition: background .12s; }
   tbody tr:hover { background: var(--surface2); }
-  td .ref { font-family: var(--mono); font-weight: 700; color: var(--text); white-space: nowrap; display: inline-block; min-width: 95px; }
+  td .ref { font-family: var(--mono); font-weight: 700; color: var(--text); white-space: nowrap; display: inline-block; min-width: 88px; }
   td .id { font-family: var(--mono); color: var(--muted); white-space: nowrap; }
-  .pill { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; letter-spacing: .02em; white-space: nowrap; }
+  .pill { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 999px; font-size: 10.5px; font-weight: 700; letter-spacing: .01em; white-space: nowrap; }
   .pill.CONFIRMED, .pill.RESTRICTED_ZONE_SMOKING { background: rgba(255,84,104,.14); color: var(--danger); }
   .pill.REJECTED { background: rgba(135,146,171,.14); color: var(--muted); }
   .pill.POTENTIAL { background: rgba(247,178,59,.14); color: var(--warn); }
   .pill.INFORMATIONAL_SMOKING { background: rgba(76,141,255,.14); color: var(--accent); }
-  .btn { border: 1px solid var(--line2); background: var(--surface2); color: var(--text); padding: 4px 10px; border-radius: 8px;
-    cursor: pointer; font-size: 11.5px; font-weight: 600; transition: all .15s ease; display: inline-flex; align-items: center; gap: 4px;
+  .btn { border: 1px solid var(--line2); background: var(--surface2); color: var(--text); padding: 4px 8px; border-radius: 6px;
+    cursor: pointer; font-size: 11px; font-weight: 700; transition: all .15s ease; display: inline-flex; align-items: center; gap: 3px;
     line-height: 1.2; white-space: nowrap; }
-  .btn svg { width: 13px; height: 13px; stroke-width: 2.2; stroke: currentColor; }
+  .btn svg { width: 12px; height: 12px; stroke-width: 2.5; stroke: currentColor; }
   .btn:hover { border-color: var(--accent); transform: translateY(-1px); }
-  .btn.ok { background: rgba(49,208,170,.14); color: var(--ok); border: 1px solid rgba(49,208,170,.4); }
-  .btn.ok:hover { background: var(--ok); color: #06101f; font-weight: 700; border-color: var(--ok); box-shadow: 0 0 10px rgba(49,208,170,.4); }
-  .btn.no { background: rgba(255,84,104,.14); color: var(--danger); border: 1px solid rgba(255,84,104,.4); }
-  .btn.no:hover { background: var(--danger); color: #fff; font-weight: 700; border-color: var(--danger); box-shadow: 0 0 10px rgba(255,84,104,.4); }
+  .btn.ok { background: rgba(49,208,170,.18); color: var(--ok); border: 1px solid rgba(49,208,170,.5); }
+  .btn.ok:hover { background: var(--ok); color: #06101f; border-color: var(--ok); box-shadow: 0 0 10px rgba(49,208,170,.4); }
+  .btn.no { background: rgba(255,84,104,.18); color: var(--danger); border: 1px solid rgba(255,84,104,.5); }
+  .btn.no:hover { background: var(--danger); color: #fff; border-color: var(--danger); box-shadow: 0 0 10px rgba(255,84,104,.4); }
   .btn.del { background: rgba(135,146,171,.12); color: var(--muted); border: 1px solid var(--line2); }
   .btn.del:hover { background: rgba(255,84,104,.18); color: var(--danger); border-color: var(--danger); box-shadow: 0 0 10px rgba(255,84,104,.3); }
   .btn.primary { background: var(--accent); border-color: var(--accent); color: #06101f; font-weight: 700; }
   .btn.primary:hover { filter: brightness(1.08); }
-  .btn-group { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+  .btn-group { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
   .empty { padding: 26px 16px; color: var(--faint); font-size: 13px; text-align: center; }
 
   /* ---- analytics bars ---- */
@@ -414,13 +414,13 @@ async function refreshData(){
 }
 
 function reviewBtns(v){
-  if(v.status==='POTENTIAL'||(v.status==='CONFIRMED'&&!v.reviewed_at)){
-    return `<div class="btn-group"><button class="btn ok" onclick="review(${v.id},'CONFIRMED')"><svg viewBox="0 0 24 24" fill="none"><polyline points="20 6 9 17 4 12"/></svg>Confirm</button><button class="btn no" onclick="review(${v.id},'REJECTED')"><svg viewBox="0 0 24 24" fill="none"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>Reject</button></div>`;
-  }
   if(v.review_result==='REJECTED'||v.status==='REJECTED'){
     return `<span class="pill REJECTED">✗ Rejected</span>`;
   }
-  return `<span class="pill ok" style="background:rgba(49,208,170,.14);color:var(--ok)">✓ Confirmed</span>`;
+  if(v.review_result==='CONFIRMED'||v.status==='CONFIRMED_USER'){
+    return `<span class="pill ok" style="background:rgba(49,208,170,.16);color:var(--ok);border:1px solid rgba(49,208,170,.35)">✓ Confirmed</span>`;
+  }
+  return `<div class="btn-group"><button class="btn ok" onclick="review(${v.id},'CONFIRMED')"><svg viewBox="0 0 24 24" fill="none"><polyline points="20 6 9 17 4 12"/></svg>Confirm</button><button class="btn no" onclick="review(${v.id},'REJECTED')"><svg viewBox="0 0 24 24" fill="none"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>Reject</button></div>`;
 }
 
 function refreshGallery(){
