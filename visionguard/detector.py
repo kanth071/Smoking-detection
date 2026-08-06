@@ -34,8 +34,8 @@ def iou(a, b):
 
 
 def filter_false_positives(c_box, conf, persons):
-    """Strictly filter out spectacle lenses, glasses frames, pens, spectacle stems, neck shadow folds, and noise."""
-    if conf < 0.48:  # Strictly rejects spectacle lens/frame noise (0.36, 0.39, 0.42, 0.46)
+    """Strictly filter out pens, pencils, stylus sticks, spectacle frames, glasses stems, neck shadow folds, and noise."""
+    if conf < 0.50:  # Strictly rejects spectacle lens/frame and pen noise (< 0.50)
         return False
 
     w = max(0.0, c_box[2] - c_box[0])
@@ -45,7 +45,13 @@ def filter_false_positives(c_box, conf, persons):
         return False
 
     aspect = max(w, h) / (min(w, h) + 1e-5)
-    if aspect > 7.0:  # Rejects thin lines (cable, pen stem, spectacle arm)
+    
+    # 1. HARD PEN & STYLUS & CABLE EXCLUSION (Pens/pencils/cables/spectacle arms have aspect > 4.8)
+    if aspect > 4.8:
+        return False
+
+    # Elongated pen-like shapes require very high confidence (>= 0.65) to avoid pen misclassification
+    if aspect > 3.8 and conf < 0.65:
         return False
 
     c_cx = (c_box[0] + c_box[2]) / 2.0
@@ -61,20 +67,19 @@ def filter_false_positives(c_box, conf, persons):
         # Relative coordinates inside person box
         rel_y = (c_cy - py1) / ph
 
-        # 1. HARD EXCLUSION: EYE & SPECTACLES & GLASSES FRAME & TEMPLES ZONE (Upper 47% of person box)
-        # Spectacle lenses, nose bridge curve, glasses stems, temples, eyes, ears, and hair are strictly in upper 47%
+        # 2. HARD EXCLUSION: EYE & SPECTACLES & GLASSES FRAME & TEMPLES ZONE (Upper 47% of person box)
         if rel_y < 0.47:
             return False
 
-        # 2. HARD EXCLUSION: NECK & COLLAR SHADOW FOLDS (Lower neck region rel_y > 0.65)
+        # 3. HARD EXCLUSION: NECK & COLLAR SHADOW FOLDS (Lower neck region rel_y > 0.65)
         if rel_y > 0.65 and aspect < 1.45:
             return False
 
-        # 3. VALID SMOKING REGION (Strictly Mouth, Lips, Lower Jaw & Hand to Mouth: rel_y 0.47 to 0.65)
-        exp_x1 = px1 - 0.12 * pw
-        exp_x2 = px2 + 0.12 * pw
+        # 4. VALID SMOKING REGION (Strictly Mouth, Lips, Lower Jaw & Lip-to-Hand: rel_y 0.47 to 0.64)
+        exp_x1 = px1 - 0.10 * pw
+        exp_x2 = px2 + 0.10 * pw
         exp_y1 = py1 + 0.47 * ph
-        exp_y2 = py1 + 0.65 * ph
+        exp_y2 = py1 + 0.64 * ph
 
         if (exp_x1 <= c_cx <= exp_x2) and (exp_y1 <= c_cy <= exp_y2):
             return True
@@ -200,6 +205,12 @@ class Detector:
                    if r.boxes.id is not None else list(range(len(xyxys))))
             for xyxy, conf, tid, cls_id in zip(xyxys, confs, ids, clss):
                 if cls_id == 0:
+                    pw = float(xyxy[2] - xyxy[0])
+                    ph = float(xyxy[3] - xyxy[1])
+                    aspect_p = ph / (pw + 1e-5)
+                    # Filter out static chair backs, wide armrests & tiny furniture noise (human body aspect >= 0.68)
+                    if aspect_p < 0.68 or ph < 65 or pw < 35:
+                        continue
                     persons.append({"box": xyxy.tolist(), "conf": float(conf), "id": int(tid)})
 
         cigarettes = []

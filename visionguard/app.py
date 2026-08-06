@@ -296,6 +296,18 @@ def clear_violations(db: Session = Depends(get_db)):
     return {"deleted": n}
 
 
+@app.get("/download-report")
+def download_pdf_report():
+    """Serve the generated VisionGuard Technical Architecture PDF report for browser download."""
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    pdf_p = os.path.join(base_dir, "VisionGuard_Technical_Architecture_Report.pdf")
+    if not os.path.isfile(pdf_p):
+        pdf_p = os.path.join(os.path.dirname(base_dir), "VisionGuard_Technical_Architecture_Report.pdf")
+    if not os.path.isfile(pdf_p):
+        raise HTTPException(404, "PDF report not found")
+    return FileResponse(pdf_p, media_type="application/pdf", filename="VisionGuard_Technical_Architecture_Report.pdf")
+
+
 @app.get("/api/analytics")
 def analytics(db: Session = Depends(get_db)):
     def by(col):
