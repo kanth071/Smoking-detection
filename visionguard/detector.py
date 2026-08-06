@@ -49,7 +49,8 @@ def filter_false_positives(c_box, conf, persons):
         return False
 
     c_cx = (c_box[0] + c_box[2]) / 2.0
-    c_cy = (c_box[1] + c_box[3]) / 2.0
+    if not persons:
+        return True
 
     for p in persons:
         px1, py1, px2, py2 = p["box"]
@@ -172,7 +173,6 @@ class Detector:
             return [], [], set(), {}
 
         fh, fw = frame.shape[:2]
-        frame_area = float(fw * fh)
 
         pr = None
         try:
@@ -205,33 +205,18 @@ class Detector:
                 if cls_id == 0:
                     pw = float(xyxy[2] - xyxy[0])
                     ph = float(xyxy[3] - xyxy[1])
-                    p_area = pw * ph
-                    aspect = ph / (pw + 1e-5)
-
-                    # 1. REJECT OVERSIZED BACKGROUND FURNITURE / WALL BOXES
-                    if p_area > 0.80 * frame_area or pw > 0.85 * fw or ph > 0.92 * fh:
+                    if pw < 15 or ph < 20:  # Ignore tiny noise dots only
                         continue
-
-                    # 2. REJECT NON-HUMAN WIDE OBJECTS (Chairs, Desks, Monitors)
-                    if aspect < 0.65 or aspect > 4.8:
-                        continue
-
-                    # 3. REJECT TINY NOISE / DISTANT CLUTTER
-                    if ph < 0.14 * fh or pw < 0.07 * fw:
-                        continue
-
-                    # 4. INSTANT ACCURATE BOUNDING BOX (Zero Lag, 100% Responsive)
-                    tid_int = int(tid)
                     clamped_box = [
                         max(0.0, min(float(fw), float(xyxy[0]))),
                         max(0.0, min(float(fh), float(xyxy[1]))),
                         max(0.0, min(float(fw), float(xyxy[2]))),
                         max(0.0, min(float(fh), float(xyxy[3])))
                     ]
-                    persons.append({"box": clamped_box, "conf": float(conf), "id": tid_int})
+                    persons.append({"box": clamped_box, "conf": float(conf), "id": int(tid)})
 
         cigarettes = []
-        if self.cig_model is not None and len(persons) > 0:
+        if self.cig_model is not None:
             cr = self.cig_model.predict(
                 frame, conf=self.cig_conf, iou=self.iou_thresh,
                 imgsz=self.imgsz, device=self.device, half=self.half, verbose=False,
@@ -241,7 +226,7 @@ class Detector:
                 for b in c0.boxes:
                     c_box = b.xyxy[0].cpu().numpy().tolist()
                     c_conf = float(b.conf[0].cpu())
-                    if filter_false_positives(c_box, c_conf, persons):
+                    if len(persons) == 0 or filter_false_positives(c_box, c_conf, persons):
                         cigarettes.append({"box": c_box, "conf": c_conf})
 
         smoking = associate(persons, cigarettes, self.threshold, self.margin,
