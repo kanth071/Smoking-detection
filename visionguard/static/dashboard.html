@@ -107,14 +107,9 @@
 
   /* ---- monitor ---- */
   .monitor{position:relative;background:radial-gradient(120% 90% at 50% 0%,#0c1424,#05080f);aspect-ratio:16/9;
-    display:flex;align-items:center;justify-content:center;overflow:hidden}
+    display:flex;align-items:center;justify-content:center;overflow:hidden;border-radius:0 0 var(--r) var(--r)}
   .monitor video,.monitor img{width:100%;height:100%;object-fit:contain;display:block}
   .monitor canvas{position:absolute;inset:0;width:100%;height:100%}
-  .monitor .tick{position:absolute;width:18px;height:18px;border:2px solid var(--accent);box-shadow:0 0 8px rgba(76,141,255,0.5)}
-  .monitor .tl{top:12px;left:12px;border-right:0;border-bottom:0}
-  .monitor .tr{top:12px;right:12px;border-left:0;border-bottom:0}
-  .monitor .bl{bottom:12px;left:12px;border-right:0;border-top:0}
-  .monitor .br{bottom:12px;right:12px;border-left:0;border-top:0}
   .rec{position:absolute;top:14px;left:18px;display:flex;align-items:center;gap:7px;font-family:var(--mono);
     font-size:11px;letter-spacing:.14em;color:#fff;text-shadow:0 1px 4px #000;background:rgba(5,8,15,0.6);padding:4px 10px;border-radius:999px;backdrop-filter:blur(4px);border:1px solid rgba(255,255,255,0.1)}
   .rec i{width:9px;height:9px;border-radius:50%;background:var(--danger);box-shadow:0 0 10px var(--danger);animation:pulse 1.4s infinite}
@@ -259,8 +254,8 @@
           <!-- Camera Feed Monitor Card -->
           <div class="card">
             <div class="hd">
-              <span class="t">Surveillance feed · CAM-01</span>
-              <span class="r" style="font-size:11px;color:var(--ok);font-weight:700;display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:var(--ok);box-shadow:0 0 8px var(--ok)"></span>ONLINE</span>
+              <span class="t">Live Surveillance Stream · CAM-01</span>
+              <span class="r" style="font-size:11px;color:var(--ok);font-weight:700;display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:var(--ok);box-shadow:0 0 8px var(--ok)"></span>ONLINE (640x480)</span>
             </div>
             <div class="monitor" id="videowrap">
               <video id="cam" autoplay muted playsinline></video>
@@ -268,13 +263,6 @@
               <img id="serverfeed" style="display:none"/>
               <div class="msg" id="videomsg" style="display:none"></div>
               <span class="rec"><i></i>REC · LIVE STREAM</span>
-              <span class="tick tl"></span><span class="tick tr"></span><span class="tick bl"></span><span class="tick br"></span>
-            </div>
-            <div style="padding:10px 14px;background:var(--surface2);border-top:1px solid var(--line);display:flex;align-items:center;justify-content:space-between">
-              <div style="display:flex;align-items:center;gap:8px">
-                <button class="btn ok" onclick="location.href='/download-report'"><svg viewBox="0 0 24 24" fill="none"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>PDF Architecture Report</button>
-              </div>
-              <span style="font-size:11px;color:var(--faint);font-family:var(--mono)">NVIDIA RTX 4050 FP16 · 640x480</span>
             </div>
           </div>
 
