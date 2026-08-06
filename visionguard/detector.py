@@ -35,12 +35,12 @@ def iou(a, b):
 
 def filter_false_positives(c_box, conf, persons):
     """
-    STRICT MOUTH/HAND & ANTI-BACKGROUND DISCRIMINATOR:
-    Rejects background wall/chair patterns, pens, pen caps, eyeglasses, and noise.
-    Only allows detections that have conf >= 0.32 and strictly fall inside a valid
-    hand-to-mouth or facial smoking region of a detected person.
+    ZERO-FALSE-POSITIVE CIGARETTE DISCRIMINATOR:
+    Strictly excludes spectacle frames, eyeglasses lenses, nose bridges, pens, wall patterns,
+    and background noise. Detections MUST have conf >= 0.50 and lie strictly within the
+    mouth, lips, chin, or hand-to-mouth region (rel_y >= 0.50).
     """
-    if conf < 0.32:
+    if conf < 0.50:
         return False
 
     w = max(0.0, c_box[2] - c_box[0])
@@ -48,12 +48,12 @@ def filter_false_positives(c_box, conf, persons):
     area = w * h
 
     # 1. Reject tiny noise patches
-    if w < 5 or h < 5 or area < 20:
+    if w < 6 or h < 6 or area < 25:
         return False
 
-    # 2. Reject extreme long thin lines (spectacle stems, wires)
+    # 2. Reject long thin wires / spectacle arms
     aspect = max(w, h) / (min(w, h) + 1e-5)
-    if aspect > 9.0:
+    if aspect > 8.5:
         return False
 
     if not persons:
@@ -71,18 +71,18 @@ def filter_false_positives(c_box, conf, persons):
 
         rel_y = (c_cy - py1) / ph
 
-        # Eyeglasses / Spectacles / Nose bridge zone (rel_y in [0.18, 0.38])
-        if 0.18 <= rel_y <= 0.38:
+        # STRICTLY EXCLUDE EYE / SPECTACLES / GLASSES / NOSE ZONE (rel_y < 0.50)
+        if rel_y < 0.50:
             continue
 
-        # Lower torso / belly / background floor zone (rel_y > 0.85)
+        # Lower torso / belly / floor zone (rel_y > 0.85)
         if rel_y > 0.85:
             continue
 
-        # Valid mouth, lip, chin, and hand-to-mouth region
-        exp_x1 = px1 - 0.20 * pw
-        exp_x2 = px2 + 0.20 * pw
-        exp_y1 = py1 + 0.38 * ph
+        # VALID MOUTH, LIP, CHIN, AND HAND-TO-MOUTH SMOKING REGION ONLY (0.50 <= rel_y <= 0.85)
+        exp_x1 = px1 - 0.25 * pw
+        exp_x2 = px2 + 0.25 * pw
+        exp_y1 = py1 + 0.50 * ph
         exp_y2 = py1 + 0.85 * ph
 
         if (exp_x1 <= c_cx <= exp_x2) and (exp_y1 <= c_cy <= exp_y2):

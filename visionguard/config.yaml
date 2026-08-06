@@ -16,7 +16,7 @@ models:
 
 detection:
   person_conf: 0.40         # 0.40 confidence for responsive person detection
-  cig_conf: 0.32            # 0.32 confidence strictly filters out background patterns, pens, and eyeglasses
+  cig_conf: 0.50            # 0.50 confidence strictly eliminates spectacles, nose bridges, pens, and wall patterns
   iou_thresh: 0.45          # 0.45 IoU threshold
   imgsz: 640                # 640 native resolution for pixel-precise feature extraction
   half: true                # fp16 GPU acceleration
