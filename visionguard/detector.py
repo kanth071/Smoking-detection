@@ -35,22 +35,24 @@ def iou(a, b):
 
 def filter_false_positives(c_box, conf, persons):
     """Filter noise while ensuring real cigarettes held near mouth or in hand are detected."""
-    if conf < 0.35:  # Accepts custom cigarette model detections (>= 0.35)
+    if conf < 0.20:
         return False
 
     w = max(0.0, c_box[2] - c_box[0])
     h = max(0.0, c_box[3] - c_box[1])
     area = w * h
-    if w < 5 or h < 5 or area < 30:  # Rejects tiny noise dots
+    if w < 3 or h < 3 or area < 10:
         return False
 
     aspect = max(w, h) / (min(w, h) + 1e-5)
-    if aspect > 7.5:  # Rejects extreme long thin lines (cables/spectacle stems)
+    if aspect > 12.0:
         return False
 
-    c_cx = (c_box[0] + c_box[2]) / 2.0
     if not persons:
         return True
+
+    c_cx = (c_box[0] + c_box[2]) / 2.0
+    c_cy = (c_box[1] + c_box[3]) / 2.0
 
     for p in persons:
         px1, py1, px2, py2 = p["box"]
@@ -59,27 +61,15 @@ def filter_false_positives(c_box, conf, persons):
         if pw <= 0 or ph <= 0:
             continue
 
-        # Relative coordinates inside person box
-        rel_y = (c_cy - py1) / ph
-
-        # 1. EXCLUDE FOREHEAD / HAIR (Top 28% of person box)
-        if rel_y < 0.28:
-            return False
-
-        # 2. EXCLUDE LOWER CHEST / BELLY SHADOWS (Lower region rel_y > 0.85)
-        if rel_y > 0.85:
-            return False
-
-        # 3. VALID SMOKING REGION (Mouth, lips, chin, jawline, hand-to-mouth movement)
-        exp_x1 = px1 - 0.20 * pw
-        exp_x2 = px2 + 0.20 * pw
-        exp_y1 = py1 + 0.28 * ph
-        exp_y2 = py1 + 0.85 * ph
+        exp_x1 = px1 - 0.35 * pw
+        exp_x2 = px2 + 0.35 * pw
+        exp_y1 = py1 + 0.15 * ph
+        exp_y2 = py1 + 0.95 * ph
 
         if (exp_x1 <= c_cx <= exp_x2) and (exp_y1 <= c_cy <= exp_y2):
             return True
 
-    return False
+    return True
 
 
 def associate(persons, cigarettes, threshold=0.10, margin=0.05, use_iou_fallback=True):
