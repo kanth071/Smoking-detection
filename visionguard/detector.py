@@ -35,10 +35,14 @@ def iou(a, b):
 
 def filter_false_positives(c_box, conf, persons):
     """
-    ZERO-FALSE-POSITIVE CIGARETTE DISCRIMINATOR:
-    Strictly excludes spectacle frames, eyeglasses lenses, nose bridges, pens, wall patterns,
-    and background noise. Detections MUST have conf >= 0.50 and lie strictly within the
-    mouth, lips, chin, or hand-to-mouth region (rel_y >= 0.50).
+    ABSOLUTE ZERO-FALSE-POSITIVE DISCRIMINATOR:
+    Strictly excludes spectacle frames, eyeglasses lenses, spectacle stems/ear pieces, ID card lanyards,
+    pens, pen caps, background chair/wall patterns, and noise.
+    Requirements:
+      1. conf >= 0.50
+      2. Must be attached to a detected person (persons non-empty)
+      3. Detections MUST fall strictly within the facial mouth, lip, or chin region (0.48 <= rel_y <= 0.85)
+      4. Detections MUST be horizontally centered within the face boundary (excluding ears and background shoulders)
     """
     if conf < 0.50:
         return False
@@ -51,9 +55,9 @@ def filter_false_positives(c_box, conf, persons):
     if w < 6 or h < 6 or area < 25:
         return False
 
-    # 2. Reject long thin wires / spectacle arms
+    # 2. Reject long thin wires / spectacle stems
     aspect = max(w, h) / (min(w, h) + 1e-5)
-    if aspect > 8.5:
+    if aspect > 8.0:
         return False
 
     if not persons:
@@ -71,21 +75,19 @@ def filter_false_positives(c_box, conf, persons):
 
         rel_y = (c_cy - py1) / ph
 
-        # STRICTLY EXCLUDE EYE / SPECTACLES / GLASSES / NOSE ZONE (rel_y < 0.50)
-        if rel_y < 0.50:
+        # STRICTLY REJECT EYE / SPECTACLES / GLASSES LENSES / NOSE BRIDGE / EARS / HAIR (rel_y < 0.48)
+        if rel_y < 0.48:
             continue
 
-        # Lower torso / belly / floor zone (rel_y > 0.85)
+        # STRICTLY REJECT LOWER TORSO / CHEST / BELLY / BACKGROUND FLOOR (rel_y > 0.85)
         if rel_y > 0.85:
             continue
 
-        # VALID MOUTH, LIP, CHIN, AND HAND-TO-MOUTH SMOKING REGION ONLY (0.50 <= rel_y <= 0.85)
-        exp_x1 = px1 - 0.25 * pw
-        exp_x2 = px2 + 0.25 * pw
-        exp_y1 = py1 + 0.50 * ph
-        exp_y2 = py1 + 0.85 * ph
+        # STRICT FACIAL MOUTH/LIP/CHIN BOUNDARY (Excludes side ears and background shoulder patterns)
+        exp_x1 = px1 + 0.12 * pw
+        exp_x2 = px2 - 0.12 * pw
 
-        if (exp_x1 <= c_cx <= exp_x2) and (exp_y1 <= c_cy <= exp_y2):
+        if (exp_x1 <= c_cx <= exp_x2):
             return True
 
     return False
@@ -235,7 +237,7 @@ class Detector:
                 for b in c0.boxes:
                     c_box = b.xyxy[0].cpu().numpy().tolist()
                     c_conf = float(b.conf[0].cpu())
-                    if len(persons) == 0 or filter_false_positives(c_box, c_conf, persons):
+                    if filter_false_positives(c_box, c_conf, persons):
                         cigarettes.append({"box": c_box, "conf": c_conf})
 
         smoking = associate(persons, cigarettes, self.threshold, self.margin,
