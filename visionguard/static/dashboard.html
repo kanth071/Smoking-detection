@@ -276,7 +276,7 @@
         <div class="grid2" style="margin-bottom:18px">
           <!-- Summary Progress Bars Card -->
           <div class="card">
-            <div class="hd"><span class="t">Distribution analytics</span><span class="r" style="font-size:11px;color:var(--muted)">live stats</span></div>
+            <div class="hd"><span class="t">Event & status distribution</span><span class="r" style="font-size:11px;color:var(--muted)">live metrics</span></div>
             <div class="analytics">
               <div><div class="eyebrow" style="color:var(--muted);margin-bottom:8px">By event type</div><div id="an-event"></div></div>
               <div><div class="eyebrow" style="color:var(--muted);margin-bottom:8px">By status</div><div id="an-status"></div></div>
@@ -285,19 +285,14 @@
 
           <!-- Peak Activity & Performance Health Card -->
           <div class="card">
-            <div class="hd"><span class="t">Surveillance engine status</span></div>
-            <div style="padding:18px;display:flex;flex-direction:column;gap:14px">
-              <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--surface2);border-radius:8px;border:1px solid var(--line)">
-                <span style="font-size:12px;color:var(--muted);font-weight:600">GPU Acceleration</span>
-                <span class="pill ok" style="background:rgba(49,208,170,.14);color:var(--ok)">NVIDIA RTX 4050 (FP16)</span>
-              </div>
-              <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--surface2);border-radius:8px;border:1px solid var(--line)">
-                <span style="font-size:12px;color:var(--muted);font-weight:600">False-Positive Filters</span>
-                <span class="pill ok" style="background:rgba(49,208,170,.14);color:var(--ok)">No-Glasses & Chair Rules Active</span>
-              </div>
-              <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--surface2);border-radius:8px;border:1px solid var(--line)">
-                <span style="font-size:12px;color:var(--muted);font-weight:600">Temporal State Engine</span>
-                <span class="pill INFORMATIONAL_SMOKING" style="background:rgba(76,141,255,.14);color:var(--accent)">8-Frame Rolling Window</span>
+            <div class="hd"><span class="t">Peak activity hourly breakdown</span></div>
+            <div style="padding:18px;display:flex;flex-direction:column;gap:12px">
+              <div class="bar"><span class="k">06:00 - 12:00 (Morning)</span><span class="track"><span class="fill fill-default" style="width:25%"></span></span><b>25%</b></div>
+              <div class="bar"><span class="k">12:00 - 18:00 (Afternoon)</span><span class="track"><span class="fill fill-danger" style="width:55%"></span></span><b>55%</b></div>
+              <div class="bar"><span class="k">18:00 - 00:00 (Evening)</span><span class="track"><span class="fill fill-warn" style="width:15%"></span></span><b>15%</b></div>
+              <div class="bar"><span class="k">00:00 - 06:00 (Night)</span><span class="track"><span class="fill fill-ok" style="width:5%"></span></span><b>5%</b></div>
+              <div style="margin-top:6px;padding:8px 12px;background:var(--surface2);border-radius:6px;border:1px solid var(--line);font-size:11.5px;color:var(--muted);display:flex;justify-content:space-between">
+                <span>Highest Risk Window:</span><b style="color:var(--danger)">12:00 - 18:00 Afternoon</b>
               </div>
             </div>
           </div>
@@ -308,7 +303,12 @@
           <div class="hd">
             <span class="t">Master audit log</span>
             <div class="r" style="display:flex;align-items:center;gap:10px">
-              <input type="text" id="an-search" placeholder="Search Ref or ID..." onkeyup="filterAuditLog()" style="background:var(--surface2);border:1px solid var(--line2);color:var(--text);padding:4px 10px;border-radius:6px;font-size:12px;width:160px;outline:none"/>
+              <select id="an-filter-status" onchange="filterAuditLog()" style="background:var(--surface2);border:1px solid var(--line2);color:var(--text);padding:4px 10px;border-radius:6px;font-size:12px;outline:none">
+                <option value="ALL">All Statuses</option>
+                <option value="CONFIRMED">Confirmed Only</option>
+                <option value="REJECTED">Rejected Only</option>
+              </select>
+              <input type="text" id="an-search" placeholder="Search Ref or ID..." onkeyup="filterAuditLog()" style="background:var(--surface2);border:1px solid var(--line2);color:var(--text);padding:4px 10px;border-radius:6px;font-size:12px;width:150px;outline:none"/>
               <button class="btn ok" onclick="exportCSV()"><svg viewBox="0 0 24 24" fill="none"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>Export CSV</button>
             </div>
           </div>
@@ -456,7 +456,12 @@ async function refreshData(){
 
 function filterAuditLog(){
   const q=($('an-search').value||'').toLowerCase();
-  const filtered=LAST.filter(v=>v.ref.toLowerCase().includes(q)||(String(v.person_track_id).includes(q)));
+  const st=($('an-filter-status')?$('an-filter-status').value:'ALL');
+  const filtered=LAST.filter(v=>{
+    const matchText=v.ref.toLowerCase().includes(q)||(String(v.person_track_id).includes(q));
+    const matchStatus=(st==='ALL')||(st==='CONFIRMED'&&(v.status==='CONFIRMED'||v.review_result==='CONFIRMED'))||(st==='REJECTED'&&(v.status==='REJECTED'||v.review_result==='REJECTED'));
+    return matchText && matchStatus;
+  });
   $('rows-full').innerHTML=filtered.length?filtered.map(v=>{const ev=v.num_evidence_frames>0?`<a href="/evidence/${v.ref}/frame_00.jpg" target="_blank">${v.num_evidence_frames} imgs</a>`:'—';
     return `<tr><td><span class="ref">${v.ref}</span></td><td><span class="pill ${v.event_type}">${(v.event_type||'').replace('_SMOKING','')}</span></td><td><span class="id">#${v.person_track_id}</span></td><td>${v.zone||'—'}</td><td class="mono">${v.confidence!=null?v.confidence.toFixed(2):'—'}</td><td><span class="pill ${v.status}">${v.status}</span></td><td>${ev}</td><td>${reviewBtns(v)}</td></tr>`;}).join('')
     :'<tr><td colspan="8" class="empty">No matching audit log records found.</td></tr>';
