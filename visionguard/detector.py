@@ -34,24 +34,18 @@ def iou(a, b):
 
 
 def filter_false_positives(c_box, conf, persons):
-    """Strictly filter out pens, pencils, stylus sticks, spectacle frames, glasses stems, neck shadow folds, and noise."""
-    if conf < 0.50:  # Strictly rejects spectacle lens/frame and pen noise (< 0.50)
+    """Filter noise while ensuring real cigarettes held near mouth or in hand are detected."""
+    if conf < 0.35:  # Accepts custom cigarette model detections (>= 0.35)
         return False
 
     w = max(0.0, c_box[2] - c_box[0])
     h = max(0.0, c_box[3] - c_box[1])
     area = w * h
-    if w < 7 or h < 7 or area < 50:  # Rejects tiny noise patches
+    if w < 5 or h < 5 or area < 30:  # Rejects tiny noise dots
         return False
 
     aspect = max(w, h) / (min(w, h) + 1e-5)
-    
-    # 1. HARD PEN & STYLUS & CABLE EXCLUSION (Pens/pencils/cables/spectacle arms have aspect > 4.8)
-    if aspect > 4.8:
-        return False
-
-    # Elongated pen-like shapes require very high confidence (>= 0.65) to avoid pen misclassification
-    if aspect > 3.8 and conf < 0.65:
+    if aspect > 7.5:  # Rejects extreme long thin lines (cables/spectacle stems)
         return False
 
     c_cx = (c_box[0] + c_box[2]) / 2.0
@@ -67,19 +61,19 @@ def filter_false_positives(c_box, conf, persons):
         # Relative coordinates inside person box
         rel_y = (c_cy - py1) / ph
 
-        # 2. HARD EXCLUSION: EYE & SPECTACLES & GLASSES FRAME & TEMPLES ZONE (Upper 47% of person box)
-        if rel_y < 0.47:
+        # 1. EXCLUDE FOREHEAD / HAIR (Top 28% of person box)
+        if rel_y < 0.28:
             return False
 
-        # 3. HARD EXCLUSION: NECK & COLLAR SHADOW FOLDS (Lower neck region rel_y > 0.65)
-        if rel_y > 0.65 and aspect < 1.45:
+        # 2. EXCLUDE LOWER CHEST / BELLY SHADOWS (Lower region rel_y > 0.85)
+        if rel_y > 0.85:
             return False
 
-        # 4. VALID SMOKING REGION (Strictly Mouth, Lips, Lower Jaw & Lip-to-Hand: rel_y 0.47 to 0.64)
-        exp_x1 = px1 - 0.10 * pw
-        exp_x2 = px2 + 0.10 * pw
-        exp_y1 = py1 + 0.47 * ph
-        exp_y2 = py1 + 0.64 * ph
+        # 3. VALID SMOKING REGION (Mouth, lips, chin, jawline, hand-to-mouth movement)
+        exp_x1 = px1 - 0.20 * pw
+        exp_x2 = px2 + 0.20 * pw
+        exp_y1 = py1 + 0.28 * ph
+        exp_y2 = py1 + 0.85 * ph
 
         if (exp_x1 <= c_cx <= exp_x2) and (exp_y1 <= c_cy <= exp_y2):
             return True
