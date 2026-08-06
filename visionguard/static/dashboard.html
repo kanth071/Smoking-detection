@@ -115,46 +115,53 @@
   .msg{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;
     color:var(--muted);font-size:14px;line-height:1.6}
 
+  /* ---- Custom Sleek Dark Scrollbars ---- */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--surface); }
+  ::-webkit-scrollbar-thumb { background: var(--line2); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
   /* ---- table ---- */
-  table{width:100%;border-collapse:collapse;font-size:13px}
-  th,td{padding:10px 14px;text-align:left;border-bottom:1px solid var(--line)}
-  th{color:var(--faint);font-weight:700;font-size:10.5px;text-transform:uppercase;letter-spacing:.1em}
-  tbody tr{transition:background .12s}tbody tr:hover{background:var(--surface2)}
-  td .ref{font-family:var(--mono);font-weight:700;color:var(--text)}
-  td .id{font-family:var(--mono);color:var(--muted)}
-  .pill{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:999px;font-size:11px;font-weight:700;letter-spacing:.02em}
-  .pill.CONFIRMED,.pill.RESTRICTED_ZONE_SMOKING{background:rgba(255,84,104,.14);color:var(--danger)}
-  .pill.REJECTED{background:rgba(135,146,171,.14);color:var(--muted)}
-  .pill.POTENTIAL{background:rgba(247,178,59,.14);color:var(--warn)}
-  .pill.INFORMATIONAL_SMOKING{background:rgba(76,141,255,.14);color:var(--accent)}
-  .btn{border:1px solid var(--line2);background:var(--surface2);color:var(--text);padding:5px 12px;border-radius:8px;
-    cursor:pointer;font-size:12px;font-weight:600;transition:all .15s ease;display:inline-flex;align-items:center;gap:5px;
-    line-height:1.2;white-space:nowrap}
-  .btn svg{width:14px;height:14px;stroke-width:2.2;stroke:currentColor}
-  .btn:hover{border-color:var(--accent);transform:translateY(-1px)}
-  .btn.ok{background:rgba(49,208,170,.12);color:var(--ok);border:1px solid rgba(49,208,170,.35)}
-  .btn.ok:hover{background:var(--ok);color:#06101f;font-weight:700;border-color:var(--ok);box-shadow:0 0 12px rgba(49,208,170,.4)}
-  .btn.no{background:rgba(255,84,104,.12);color:var(--danger);border:1px solid rgba(255,84,104,.35)}
-  .btn.no:hover{background:var(--danger);color:#fff;font-weight:700;border-color:var(--danger);box-shadow:0 0 12px rgba(255,84,104,.4)}
-  .btn.del{background:rgba(135,146,171,.12);color:var(--muted);border:1px solid var(--line2)}
-  .btn.del:hover{background:rgba(255,84,104,.18);color:var(--danger);border-color:var(--danger);box-shadow:0 0 10px rgba(255,84,104,.3)}
-  .btn.primary{background:var(--accent);border-color:var(--accent);color:#06101f;font-weight:700}
-  .btn.primary:hover{filter:brightness(1.08)}
-  .btn-group{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
-  .scroll{max-height:440px;overflow:auto}
-  .empty{padding:26px 16px;color:var(--faint);font-size:13px;text-align:center}
+  .scroll { max-height: 440px; overflow-x: auto; overflow-y: auto; border-radius: 0 0 var(--r) var(--r); }
+  table { width: 100%; min-width: 560px; border-collapse: collapse; font-size: 13px; table-layout: auto; }
+  th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--line); vertical-align: middle; }
+  th { color: var(--faint); font-weight: 700; font-size: 10.5px; text-transform: uppercase; letter-spacing: .08em; white-space: nowrap; }
+  tbody tr { transition: background .12s; }
+  tbody tr:hover { background: var(--surface2); }
+  td .ref { font-family: var(--mono); font-weight: 700; color: var(--text); white-space: nowrap; display: inline-block; min-width: 95px; }
+  td .id { font-family: var(--mono); color: var(--muted); white-space: nowrap; }
+  .pill { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; letter-spacing: .02em; white-space: nowrap; }
+  .pill.CONFIRMED, .pill.RESTRICTED_ZONE_SMOKING { background: rgba(255,84,104,.14); color: var(--danger); }
+  .pill.REJECTED { background: rgba(135,146,171,.14); color: var(--muted); }
+  .pill.POTENTIAL { background: rgba(247,178,59,.14); color: var(--warn); }
+  .pill.INFORMATIONAL_SMOKING { background: rgba(76,141,255,.14); color: var(--accent); }
+  .btn { border: 1px solid var(--line2); background: var(--surface2); color: var(--text); padding: 4px 10px; border-radius: 8px;
+    cursor: pointer; font-size: 11.5px; font-weight: 600; transition: all .15s ease; display: inline-flex; align-items: center; gap: 4px;
+    line-height: 1.2; white-space: nowrap; }
+  .btn svg { width: 13px; height: 13px; stroke-width: 2.2; stroke: currentColor; }
+  .btn:hover { border-color: var(--accent); transform: translateY(-1px); }
+  .btn.ok { background: rgba(49,208,170,.14); color: var(--ok); border: 1px solid rgba(49,208,170,.4); }
+  .btn.ok:hover { background: var(--ok); color: #06101f; font-weight: 700; border-color: var(--ok); box-shadow: 0 0 10px rgba(49,208,170,.4); }
+  .btn.no { background: rgba(255,84,104,.14); color: var(--danger); border: 1px solid rgba(255,84,104,.4); }
+  .btn.no:hover { background: var(--danger); color: #fff; font-weight: 700; border-color: var(--danger); box-shadow: 0 0 10px rgba(255,84,104,.4); }
+  .btn.del { background: rgba(135,146,171,.12); color: var(--muted); border: 1px solid var(--line2); }
+  .btn.del:hover { background: rgba(255,84,104,.18); color: var(--danger); border-color: var(--danger); box-shadow: 0 0 10px rgba(255,84,104,.3); }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #06101f; font-weight: 700; }
+  .btn.primary:hover { filter: brightness(1.08); }
+  .btn-group { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+  .empty { padding: 26px 16px; color: var(--faint); font-size: 13px; text-align: center; }
 
   /* ---- analytics bars ---- */
-  .analytics{display:grid;grid-template-columns:1fr;gap:18px;padding:16px}
-  .bar{display:flex;align-items:center;gap:10px;margin:9px 0;font-size:12.5px}
-  .bar .k{width:150px;color:var(--text);font-weight:500;text-transform:capitalize}
-  .bar .track{flex:1;height:10px;background:var(--ink2);border:1px solid var(--line2);border-radius:6px;overflow:hidden;position:relative;display:block}
-  .bar .fill{display:block;height:100%;border-radius:6px;transition:width .6s ease}
-  .bar .fill-ok{background:linear-gradient(90deg,#31d0aa,#20b38c);box-shadow:0 0 10px rgba(49,208,170,.45)}
-  .bar .fill-danger{background:linear-gradient(90deg,#ff5468,#d9384d);box-shadow:0 0 10px rgba(255,84,104,.45)}
-  .bar .fill-warn{background:linear-gradient(90deg,#f7b23b,#d9931e);box-shadow:0 0 10px rgba(247,178,59,.45)}
-  .bar .fill-default{background:linear-gradient(90deg,#4c8dff,#39e0c9);box-shadow:0 0 10px rgba(76,141,255,.45)}
-  .bar b{font-family:var(--mono);min-width:65px;text-align:right}
+  .analytics { display: grid; grid-template-columns: 1fr; gap: 20px; padding: 18px; }
+  .bar { display: flex; align-items: center; gap: 12px; margin: 10px 0; font-size: 12px; }
+  .bar .k { width: 170px; min-width: 170px; color: var(--text); font-weight: 600; text-transform: uppercase; font-size: 11px; letter-spacing: .04em; white-space: nowrap; }
+  .bar .track { flex: 1; height: 10px; background: var(--ink2); border: 1px solid var(--line2); border-radius: 6px; overflow: hidden; position: relative; display: block; }
+  .bar .fill { display: block; height: 100%; border-radius: 6px; transition: width .6s ease; }
+  .bar .fill-ok { background: linear-gradient(90deg,#31d0aa,#20b38c); box-shadow: 0 0 10px rgba(49,208,170,.45); }
+  .bar .fill-danger { background: linear-gradient(90deg,#ff5468,#d9384d); box-shadow: 0 0 10px rgba(255,84,104,.45); }
+  .bar .fill-warn { background: linear-gradient(90deg,#f7b23b,#d9931e); box-shadow: 0 0 10px rgba(247,178,59,.45); }
+  .bar .fill-default { background: linear-gradient(90deg,#4c8dff,#39e0c9); box-shadow: 0 0 10px rgba(76,141,255,.45); }
+  .bar b { font-family: var(--mono); min-width: 80px; text-align: right; white-space: nowrap; }
 
   /* ---- gallery ---- */
   .gallery{padding:16px;display:flex;flex-direction:column;gap:16px}
@@ -406,9 +413,15 @@ async function refreshData(){
   }catch(e){}
 }
 
-function reviewBtns(v){return (v.status==='POTENTIAL'||(v.status==='CONFIRMED'&&!v.reviewed_at))
-  ?`<div class="btn-group"><button class="btn ok" onclick="review(${v.id},'CONFIRMED')"><svg viewBox="0 0 24 24" fill="none"><polyline points="20 6 9 17 4 12"/></svg>Confirm</button><button class="btn no" onclick="review(${v.id},'REJECTED')"><svg viewBox="0 0 24 24" fill="none"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>Reject</button></div>`
-  :`<span class="pill ${v.review_result||v.status}">${v.review_result||v.status}</span>`;}
+function reviewBtns(v){
+  if(v.status==='POTENTIAL'||(v.status==='CONFIRMED'&&!v.reviewed_at)){
+    return `<div class="btn-group"><button class="btn ok" onclick="review(${v.id},'CONFIRMED')"><svg viewBox="0 0 24 24" fill="none"><polyline points="20 6 9 17 4 12"/></svg>Confirm</button><button class="btn no" onclick="review(${v.id},'REJECTED')"><svg viewBox="0 0 24 24" fill="none"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>Reject</button></div>`;
+  }
+  if(v.review_result==='REJECTED'||v.status==='REJECTED'){
+    return `<span class="pill REJECTED">✗ Rejected</span>`;
+  }
+  return `<span class="pill ok" style="background:rgba(49,208,170,.14);color:var(--ok)">✓ Confirmed</span>`;
+}
 
 function refreshGallery(){
   const g=$('gallery');const wp=LAST.filter(v=>v.num_evidence_frames>0);
