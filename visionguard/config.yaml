@@ -15,10 +15,10 @@ models:
   cigarette: "best.pt"      # Custom trained YOLO26 cigarette detection model
 
 detection:
-  person_conf: 0.45                # 0.45 confidence eliminates chair backs, furniture & low-confidence background objects
-  cig_conf: 0.52                # 0.52 confidence eliminates pens, markers, spectacle frames & background noise
+  person_conf: 0.35                # 0.35 confidence reliably detects person in all sitting & webcam views
+  cig_conf: 0.48                # 0.48 confidence detects cigarettes while eliminating spectacle & pen noise
   iou_thresh: 0.45
-  imgsz: 480                # 480p high FPS resolution for real-time performance
+  imgsz: 320                # 320 resolution for 60+ FPS real-time speed on GPU
   half: true                # fp16 GPU acceleration
 
 tracking:

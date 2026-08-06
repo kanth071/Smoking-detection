@@ -207,9 +207,7 @@ class Detector:
                 if cls_id == 0:
                     pw = float(xyxy[2] - xyxy[0])
                     ph = float(xyxy[3] - xyxy[1])
-                    aspect_p = ph / (pw + 1e-5)
-                    # Filter out static chair backs, wide armrests & tiny furniture noise (human body aspect >= 0.68)
-                    if aspect_p < 0.68 or ph < 65 or pw < 35:
+                    if pw < 20 or ph < 25:  # Rejects tiny noise boxes only
                         continue
                     persons.append({"box": xyxy.tolist(), "conf": float(conf), "id": int(tid)})
 
