@@ -136,6 +136,7 @@ class Detector:
         self.device = "cpu"
         self.half = False
         self.ready = False
+        self.smoothed_boxes = {}  # tid -> [x1, y1, x2, y2]
         self._load()
 
     def _load(self):
@@ -170,6 +171,9 @@ class Detector:
         if not self.ready or self.person_model is None:
             return [], [], set(), {}
 
+        fh, fw = frame.shape[:2]
+        frame_area = float(fw * fh)
+
         pr = None
         try:
             pr = self.person_model.track(
@@ -190,6 +194,7 @@ class Detector:
                 pass
 
         persons = []
+        active_ids = set()
         r = pr[0] if pr else None
         if r is not None and r.boxes is not None and len(r.boxes) > 0:
             xyxys = r.boxes.xyxy.cpu().numpy()
@@ -201,9 +206,50 @@ class Detector:
                 if cls_id == 0:
                     pw = float(xyxy[2] - xyxy[0])
                     ph = float(xyxy[3] - xyxy[1])
-                    if pw < 20 or ph < 25:  # Rejects tiny noise boxes only
+                    p_area = pw * ph
+                    aspect = ph / (pw + 1e-5)
+
+                    # 1. REJECT OVERSIZED BACKGROUND FURNITURE / WALL BOXES
+                    if p_area > 0.78 * frame_area or pw > 0.82 * fw or ph > 0.90 * fh:
                         continue
-                    persons.append({"box": xyxy.tolist(), "conf": float(conf), "id": int(tid)})
+
+                    # 2. REJECT NON-HUMAN WIDE OBJECTS (Chairs, Desks, Monitors)
+                    if aspect < 0.70 or aspect > 4.5:
+                        continue
+
+                    # 3. REJECT TINY NOISE / DISTANT CLUTTER
+                    if ph < 0.16 * fh or pw < 0.08 * fw:
+                        continue
+
+                    # 4. TEMPORAL BOUNDING BOX SMOOTHING (EMA Filter)
+                    tid_int = int(tid)
+                    active_ids.add(tid_int)
+                    if tid_int in self.smoothed_boxes:
+                        prev = self.smoothed_boxes[tid_int]
+                        alpha = 0.65
+                        box_smooth = [
+                            alpha * float(xyxy[0]) + (1 - alpha) * prev[0],
+                            alpha * float(xyxy[1]) + (1 - alpha) * prev[1],
+                            alpha * float(xyxy[2]) + (1 - alpha) * prev[2],
+                            alpha * float(xyxy[3]) + (1 - alpha) * prev[3]
+                        ]
+                    else:
+                        box_smooth = xyxy.tolist()
+                    self.smoothed_boxes[tid_int] = box_smooth
+
+                    # Clamp inside frame boundaries
+                    clamped_box = [
+                        max(0.0, min(float(fw), box_smooth[0])),
+                        max(0.0, min(float(fh), box_smooth[1])),
+                        max(0.0, min(float(fw), box_smooth[2])),
+                        max(0.0, min(float(fh), box_smooth[3]))
+                    ]
+                    persons.append({"box": clamped_box, "conf": float(conf), "id": tid_int})
+
+        # Cleanup stale smoothed boxes
+        stale = [k for k in self.smoothed_boxes if k not in active_ids]
+        for k in stale:
+            del self.smoothed_boxes[k]
 
         cigarettes = []
         if self.cig_model is not None and len(persons) > 0:
