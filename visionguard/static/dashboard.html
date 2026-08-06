@@ -80,22 +80,28 @@
   @media(max-width:1100px){.grid2{grid-template-columns:1fr}}
 
   /* ---- KPI cards ---- */
-  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px}
   @media(max-width:640px){.kpis{grid-template-columns:repeat(2,1fr)}}
-  .kpi{position:relative;background:linear-gradient(180deg,var(--surface2),var(--surface));border:1px solid var(--line);
-    border-radius:var(--r);padding:16px 16px 15px;overflow:hidden}
+  .kpi{position:relative;background:linear-gradient(145deg,rgba(26,34,54,0.9),rgba(20,27,45,0.9));border:1px solid rgba(255,255,255,0.08);
+    border-radius:var(--r);padding:18px;overflow:hidden;transition:all 0.2s ease;box-shadow:0 4px 20px rgba(0,0,0,0.2)}
+  .kpi:hover{transform:translateY(-3px);border-color:rgba(76,141,255,0.3);box-shadow:0 8px 26px rgba(0,0,0,0.35)}
   .kpi .top{display:flex;align-items:center;justify-content:space-between;color:var(--muted)}
-  .kpi .top svg{width:17px;height:17px;stroke:currentColor;opacity:.7}
-  .kpi .l{font-size:11px;letter-spacing:.14em;text-transform:uppercase}
-  .kpi .n{font-family:var(--mono);font-size:32px;font-weight:700;margin-top:8px;line-height:1}
+  .kpi .top .ico{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;background:rgba(255,255,255,0.05)}
+  .kpi.blue .top .ico{background:rgba(76,141,255,0.15);color:var(--accent)}
+  .kpi.red .top .ico{background:rgba(255,84,104,0.15);color:var(--danger)}
+  .kpi.green .top .ico{background:rgba(49,208,170,0.15);color:var(--ok)}
+  .kpi.amber .top .ico{background:rgba(247,178,59,0.15);color:var(--warn)}
+  .kpi .top svg{width:18px;height:18px;stroke:currentColor}
+  .kpi .l{font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:700}
+  .kpi .n{font-family:var(--mono);font-size:34px;font-weight:800;margin-top:10px;line-height:1}
   .kpi::after{content:"";position:absolute;left:0;bottom:0;height:3px;width:100%;background:var(--line2);opacity:.5}
   .kpi.blue::after{background:var(--accent)} .kpi.red::after{background:var(--danger)}
   .kpi.green::after{background:var(--ok)} .kpi.amber::after{background:var(--warn)}
   .kpi.red .n{color:var(--danger)} .kpi.green .n{color:var(--ok)} .kpi.amber .n{color:var(--warn)}
 
   /* ---- cards ---- */
-  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
-  .card>.hd{display:flex;align-items:center;gap:10px;padding:13px 16px;border-bottom:1px solid var(--line)}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;box-shadow:0 4px 18px rgba(0,0,0,0.25)}
+  .card>.hd{display:flex;align-items:center;gap:10px;padding:13px 16px;border-bottom:1px solid var(--line);background:rgba(255,255,255,0.02)}
   .card>.hd .t{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700}
   .card>.hd .r{margin-left:auto}
 
@@ -104,14 +110,14 @@
     display:flex;align-items:center;justify-content:center;overflow:hidden}
   .monitor video,.monitor img{width:100%;height:100%;object-fit:contain;display:block}
   .monitor canvas{position:absolute;inset:0;width:100%;height:100%}
-  .monitor .tick{position:absolute;width:16px;height:16px;border:2px solid rgba(76,141,255,.5)}
-  .monitor .tl{top:10px;left:10px;border-right:0;border-bottom:0}
-  .monitor .tr{top:10px;right:10px;border-left:0;border-bottom:0}
-  .monitor .bl{bottom:10px;left:10px;border-right:0;border-top:0}
-  .monitor .br{bottom:10px;right:10px;border-left:0;border-top:0}
-  .rec{position:absolute;top:12px;left:16px;display:flex;align-items:center;gap:7px;font-family:var(--mono);
-    font-size:11px;letter-spacing:.14em;color:#fff;text-shadow:0 1px 4px #000}
-  .rec i{width:9px;height:9px;border-radius:50%;background:var(--danger);box-shadow:0 0 8px var(--danger);animation:pulse 1.4s infinite}
+  .monitor .tick{position:absolute;width:18px;height:18px;border:2px solid var(--accent);box-shadow:0 0 8px rgba(76,141,255,0.5)}
+  .monitor .tl{top:12px;left:12px;border-right:0;border-bottom:0}
+  .monitor .tr{top:12px;right:12px;border-left:0;border-bottom:0}
+  .monitor .bl{bottom:12px;left:12px;border-right:0;border-top:0}
+  .monitor .br{bottom:12px;right:12px;border-left:0;border-top:0}
+  .rec{position:absolute;top:14px;left:18px;display:flex;align-items:center;gap:7px;font-family:var(--mono);
+    font-size:11px;letter-spacing:.14em;color:#fff;text-shadow:0 1px 4px #000;background:rgba(5,8,15,0.6);padding:4px 10px;border-radius:999px;backdrop-filter:blur(4px);border:1px solid rgba(255,255,255,0.1)}
+  .rec i{width:9px;height:9px;border-radius:50%;background:var(--danger);box-shadow:0 0 10px var(--danger);animation:pulse 1.4s infinite}
   .msg{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;
     color:var(--muted);font-size:14px;line-height:1.6}
 
@@ -231,27 +237,59 @@
       <!-- ---- LIVE ---- -->
       <section class="page active" id="page-live">
         <div class="kpis">
-          <div class="kpi blue"><div class="top"><span class="l">Persons</span><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="9" cy="8" r="3"/><path d="M3 20a6 6 0 0112 0M16 6a3 3 0 010 6M21 20a6 6 0 00-4-5.6"/></svg></div><div class="n" id="s-persons">0</div></div>
-          <div class="kpi red"><div class="top"><span class="l">Smoking now</span><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 3v6M12 21a9 9 0 100-18"/><path d="M3 14h13v3H3z"/></svg></div><div class="n" id="s-smoking">0</div></div>
-          <div class="kpi green"><div class="top"><span class="l">Detect / s</span><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 20a8 8 0 10-8-8"/><path d="M12 12l4-3"/></svg></div><div class="n" id="s-fps">0</div></div>
-          <div class="kpi amber"><div class="top"><span class="l">Confirmed</span><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 3l7 3v6c0 4-3 6.5-7 9-4-2.5-7-5-7-9V6l7-3z"/><path d="M9 11l2 2 4-4"/></svg></div><div class="n" id="s-confirmed">0</div></div>
+          <div class="kpi blue">
+            <div class="top"><span class="l">Persons monitored</span><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2"><circle cx="9" cy="8" r="3"/><path d="M3 20a6 6 0 0112 0M16 6a3 3 0 010 6M21 20a6 6 0 00-4-5.6"/></svg></div></div>
+            <div class="n" id="s-persons">0</div>
+          </div>
+          <div class="kpi red">
+            <div class="top"><span class="l">Smoking detected</span><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2"><path d="M12 3v6M12 21a9 9 0 100-18"/><path d="M3 14h13v3H3z"/></svg></div></div>
+            <div class="n" id="s-smoking">0</div>
+          </div>
+          <div class="kpi green">
+            <div class="top"><span class="l">Inference (FPS)</span><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2"><path d="M12 20a8 8 0 10-8-8"/><path d="M12 12l4-3"/></svg></div></div>
+            <div class="n" id="s-fps">0</div>
+          </div>
+          <div class="kpi amber">
+            <div class="top"><span class="l">Confirmed incidents</span><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2"><path d="M12 3l7 3v6c0 4-3 6.5-7 9-4-2.5-7-5-7-9V6l7-3z"/><path d="M9 11l2 2 4-4"/></svg></div></div>
+            <div class="n" id="s-confirmed">0</div>
+          </div>
         </div>
+
         <div class="grid2">
+          <!-- Camera Feed Monitor Card -->
           <div class="card">
-            <div class="hd"><span class="t">Camera feed</span></div>
+            <div class="hd">
+              <span class="t">Surveillance feed · CAM-01</span>
+              <span class="r" style="font-size:11px;color:var(--ok);font-weight:700;display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:var(--ok);box-shadow:0 0 8px var(--ok)"></span>ONLINE</span>
+            </div>
             <div class="monitor" id="videowrap">
               <video id="cam" autoplay muted playsinline></video>
               <canvas id="overlay"></canvas>
               <img id="serverfeed" style="display:none"/>
               <div class="msg" id="videomsg" style="display:none"></div>
-              <span class="rec"><i></i>REC · LIVE</span>
+              <span class="rec"><i></i>REC · LIVE STREAM</span>
               <span class="tick tl"></span><span class="tick tr"></span><span class="tick bl"></span><span class="tick br"></span>
             </div>
+            <div style="padding:10px 14px;background:var(--surface2);border-top:1px solid var(--line);display:flex;align-items:center;justify-content:space-between">
+              <div style="display:flex;align-items:center;gap:8px">
+                <button class="btn ok" onclick="location.href='/download-report'"><svg viewBox="0 0 24 24" fill="none"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>PDF Architecture Report</button>
+              </div>
+              <span style="font-size:11px;color:var(--faint);font-family:var(--mono)">NVIDIA RTX 4050 FP16 · 640x480</span>
+            </div>
           </div>
+
+          <!-- Recent Violations Table Card -->
           <div class="card">
-            <div class="hd"><span class="t">Recent violations</span></div>
-            <div class="scroll"><table><thead><tr><th>Ref</th><th>Type</th><th>ID</th><th>Status</th><th>Review</th></tr></thead>
-              <tbody id="rows-live"><tr><td colspan="5" class="empty">No violations detected.</td></tr></tbody></table></div>
+            <div class="hd">
+              <span class="t">Recent violations</span>
+              <span class="r" style="font-size:11px;color:var(--muted)">real-time feed</span>
+            </div>
+            <div class="scroll">
+              <table>
+                <thead><tr><th>Ref</th><th>Type</th><th>ID</th><th>Status</th><th>Review Action</th></tr></thead>
+                <tbody id="rows-live"><tr><td colspan="5" class="empty">No violations detected.</td></tr></tbody>
+              </table>
+            </div>
           </div>
         </div>
       </section>
