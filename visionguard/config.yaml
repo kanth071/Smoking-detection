@@ -11,14 +11,14 @@ source: 0
 capture_mode: "server"
 
 models:
-  person: "yolo11n.pt"      # Ultra-fast nano person tracking model (5.4MB, 60+ FPS)
-  cigarette: "best.pt"      # Custom trained YOLO26 cigarette detection model
+  person: "yolo11n.pt"      # YOLOv11 Nano (pretrained COCO person model)
+  cigarette: "best.pt"      # Custom trained cigarette detection model
 
 detection:
-  person_conf: 0.30                # 0.30 confidence detects full person boundary accurately without edge clipping
-  cig_conf: 0.35                # 0.35 confidence activates custom cigarette model detections responsively
-  iou_thresh: 0.45
-  imgsz: 640                # 640 native resolution for pixel-precise bounding boxes without box distortion
+  person_conf: 0.50         # 0.50 confidence filters out chairs, tables, and objects
+  cig_conf: 0.35            # 0.35 confidence activates cigarette detections responsively
+  iou_thresh: 0.50          # 0.50 strict IOU removes overlapping bounding boxes
+  imgsz: 416                # 416 image size for 60+ FPS high-speed inference
   half: true                # fp16 GPU acceleration
 
 tracking:
