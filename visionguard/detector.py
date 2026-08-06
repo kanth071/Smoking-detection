@@ -35,28 +35,29 @@ def iou(a, b):
 
 def filter_false_positives(c_box, conf, persons):
     """
-    BALANCED CIGARETTE DISCRIMINATOR:
-    Rejects spectacle frames, nose bridges, bare fingers, skin shadows, and background noise
-    while detecting real cigarettes near mouth, lips, chin, or hand.
+    STRICT MOUTH/HAND & ANTI-BACKGROUND DISCRIMINATOR:
+    Rejects background wall/chair patterns, pens, pen caps, eyeglasses, and noise.
+    Only allows detections that have conf >= 0.32 and strictly fall inside a valid
+    hand-to-mouth or facial smoking region of a detected person.
     """
-    if conf < 0.28:
+    if conf < 0.32:
         return False
 
     w = max(0.0, c_box[2] - c_box[0])
     h = max(0.0, c_box[3] - c_box[1])
     area = w * h
 
-    # Reject tiny noise patches / round finger tip blobs
-    if w < 4 or h < 4 or area < 15:
+    # 1. Reject tiny noise patches
+    if w < 5 or h < 5 or area < 20:
         return False
 
-    # Reject extreme long thin lines (spectacle stems, long wires)
+    # 2. Reject extreme long thin lines (spectacle stems, wires)
     aspect = max(w, h) / (min(w, h) + 1e-5)
-    if aspect > 9.5:
+    if aspect > 9.0:
         return False
 
     if not persons:
-        return True  # Standalone detection fallback if person frame is transient
+        return False
 
     c_cx = (c_box[0] + c_box[2]) / 2.0
     c_cy = (c_box[1] + c_box[3]) / 2.0
@@ -70,24 +71,24 @@ def filter_false_positives(c_box, conf, persons):
 
         rel_y = (c_cy - py1) / ph
 
-        # Eyeglasses / Spectacles zone (top 18% to 33% of head)
-        if 0.18 <= rel_y <= 0.33:
-            return False
+        # Eyeglasses / Spectacles / Nose bridge zone (rel_y in [0.18, 0.38])
+        if 0.18 <= rel_y <= 0.38:
+            continue
 
-        # Lower torso zone (below 88%)
-        if rel_y > 0.88:
-            return False
+        # Lower torso / belly / background floor zone (rel_y > 0.85)
+        if rel_y > 0.85:
+            continue
 
         # Valid mouth, lip, chin, and hand-to-mouth region
-        exp_x1 = px1 - 0.30 * pw
-        exp_x2 = px2 + 0.30 * pw
-        exp_y1 = py1 + 0.33 * ph
-        exp_y2 = py1 + 0.88 * ph
+        exp_x1 = px1 - 0.20 * pw
+        exp_x2 = px2 + 0.20 * pw
+        exp_y1 = py1 + 0.38 * ph
+        exp_y2 = py1 + 0.85 * ph
 
         if (exp_x1 <= c_cx <= exp_x2) and (exp_y1 <= c_cy <= exp_y2):
             return True
 
-    return True
+    return False
 
 
 def associate(persons, cigarettes, threshold=0.10, margin=0.05, use_iou_fallback=True):
