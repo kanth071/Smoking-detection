@@ -112,7 +112,7 @@ class VideoProcessor:
         threading.Thread(target=self._run_display_loop, daemon=True).start()
 
     def _encode(self, frame):
-        ok, buf = cv2.imencode(".jpg", frame, [cv2.IMWRITE_JPEG_QUALITY, 85])
+        ok, buf = cv2.imencode(".jpg", frame, [cv2.IMWRITE_JPEG_QUALITY, 78])
         if ok:
             with self._lock:
                 self._latest_jpeg = buf.tobytes()
