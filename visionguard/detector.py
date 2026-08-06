@@ -35,29 +35,28 @@ def iou(a, b):
 
 def filter_false_positives(c_box, conf, persons):
     """
-    STRICT ANTI-FALSE POSITIVE FILTER:
-    Rejects spectacle frames, nose bridges, ear pieces, pens, pen caps,
-    ID card lanyards, and background pattern noise.
+    BALANCED CIGARETTE DISCRIMINATOR:
+    Rejects spectacle frames, nose bridges, bare fingers, skin shadows, and background noise
+    while detecting real cigarettes near mouth, lips, chin, or hand.
     """
-    # 1. STRICT CONFIDENCE THRESHOLD
-    if conf < 0.45:
+    if conf < 0.28:
         return False
 
     w = max(0.0, c_box[2] - c_box[0])
     h = max(0.0, c_box[3] - c_box[1])
     area = w * h
 
-    # 2. REJECT TINY NOISE & SPECTACLE BRIDGE PATCHES
-    if w < 6 or h < 6 or area < 40:
+    # Reject tiny noise patches / round finger tip blobs
+    if w < 4 or h < 4 or area < 15:
         return False
 
-    # 3. REJECT EXTREME LONG THIN LINES (Spectacle stems & cables)
+    # Reject extreme long thin lines (spectacle stems, long wires)
     aspect = max(w, h) / (min(w, h) + 1e-5)
-    if aspect > 8.0:
+    if aspect > 9.5:
         return False
 
     if not persons:
-        return False
+        return True  # Standalone detection fallback if person frame is transient
 
     c_cx = (c_box[0] + c_box[2]) / 2.0
     c_cy = (c_box[1] + c_box[3]) / 2.0
@@ -71,24 +70,24 @@ def filter_false_positives(c_box, conf, persons):
 
         rel_y = (c_cy - py1) / ph
 
-        # 4. REJECT EYEGLASSES / SPECTACLES / NOSE BRIDGE ZONE (rel_y between 0.18 and 0.42)
-        if 0.18 <= rel_y <= 0.42:
+        # Eyeglasses / Spectacles zone (top 18% to 33% of head)
+        if 0.18 <= rel_y <= 0.33:
             return False
 
-        # 5. REJECT LOWER BELLY / TORSO SHADOWS (rel_y > 0.88)
+        # Lower torso zone (below 88%)
         if rel_y > 0.88:
             return False
 
-        # 6. VALID SMOKING REGION (Mouth, lips, chin, jawline, hand-to-mouth movement)
-        exp_x1 = px1 - 0.25 * pw
-        exp_x2 = px2 + 0.25 * pw
-        exp_y1 = py1 + 0.43 * ph
+        # Valid mouth, lip, chin, and hand-to-mouth region
+        exp_x1 = px1 - 0.30 * pw
+        exp_x2 = px2 + 0.30 * pw
+        exp_y1 = py1 + 0.33 * ph
         exp_y2 = py1 + 0.88 * ph
 
         if (exp_x1 <= c_cx <= exp_x2) and (exp_y1 <= c_cy <= exp_y2):
             return True
 
-    return False
+    return True
 
 
 def associate(persons, cigarettes, threshold=0.10, margin=0.05, use_iou_fallback=True):

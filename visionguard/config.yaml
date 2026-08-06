@@ -15,8 +15,8 @@ models:
   cigarette: "best.pt"      # Custom trained cigarette detection model
 
 detection:
-  person_conf: 0.45         # 0.45 confidence for reliable person detection
-  cig_conf: 0.45            # 0.45 confidence strictly filters out spectacles, nose bridges, pens, and lanyards
+  person_conf: 0.40         # 0.40 confidence for responsive person detection
+  cig_conf: 0.30            # 0.30 confidence for sensitive real cigarette detection
   iou_thresh: 0.45          # 0.45 IoU threshold
   imgsz: 640                # 640 native resolution for pixel-precise feature extraction
   half: true                # fp16 GPU acceleration
