@@ -36,13 +36,14 @@ def iou(a, b):
 def filter_false_positives(c_box, conf, persons):
     """
     ABSOLUTE ZERO-FALSE-POSITIVE DISCRIMINATOR:
-    Strictly excludes spectacle frames, eyeglasses lenses, spectacle stems/ear pieces, ID card lanyards,
+    Strictly excludes ID card lanyards, neck ribbons, ties, spectacle frames, eyeglasses lenses,
     pens, pen caps, background chair/wall patterns, and noise.
     Requirements:
       1. conf >= 0.50
       2. Must be attached to a detected person (persons non-empty)
-      3. Detections MUST fall strictly within the facial mouth, lip, or chin region (0.48 <= rel_y <= 0.85)
-      4. Detections MUST be horizontally centered within the face boundary (excluding ears and background shoulders)
+      3. REJECT ID CARD LANYARDS & CHEST STRAPS: Detections cannot have height > 0.16 * ph or area > 3500px²
+      4. Detections MUST fall strictly within the facial mouth/lip/chin region (0.44 <= rel_y <= 0.72)
+      5. Detections MUST be horizontally centered within the facial mouth zone
     """
     if conf < 0.50:
         return False
@@ -51,11 +52,15 @@ def filter_false_positives(c_box, conf, persons):
     h = max(0.0, c_box[3] - c_box[1])
     area = w * h
 
-    # 1. Reject tiny noise patches
-    if w < 6 or h < 6 or area < 25:
+    # 1. REJECT TINY NOISE PATCHES
+    if w < 5 or h < 5 or area < 20:
         return False
 
-    # 2. Reject long thin wires / spectacle stems
+    # 2. REJECT ID CARD LANYARDS & OVERSIZED CHEST STRAPS (Lanyards are tall > 150px or large area > 3500px²)
+    if area > 3500:
+        return False
+
+    # 3. REJECT EXTREME LONG THIN WIRES / SPECTACLE STEMS
     aspect = max(w, h) / (min(w, h) + 1e-5)
     if aspect > 8.0:
         return False
@@ -75,17 +80,21 @@ def filter_false_positives(c_box, conf, persons):
 
         rel_y = (c_cy - py1) / ph
 
-        # STRICTLY REJECT EYE / SPECTACLES / GLASSES LENSES / NOSE BRIDGE / EARS / HAIR (rel_y < 0.48)
-        if rel_y < 0.48:
+        # REJECT ID CARD LANYARDS & CHEST RIBBONS THAT EXCEED 16% OF PERSON HEIGHT
+        if h > 0.16 * ph:
             continue
 
-        # STRICTLY REJECT LOWER TORSO / CHEST / BELLY / BACKGROUND FLOOR (rel_y > 0.85)
-        if rel_y > 0.85:
+        # STRICTLY REJECT EYE / SPECTACLES / GLASSES LENSES / NOSE BRIDGE / EARS / HAIR (rel_y < 0.44)
+        if rel_y < 0.44:
             continue
 
-        # STRICT FACIAL MOUTH/LIP/CHIN BOUNDARY (Excludes side ears and background shoulder patterns)
-        exp_x1 = px1 + 0.12 * pw
-        exp_x2 = px2 - 0.12 * pw
+        # STRICTLY REJECT LOWER CHEST / LANYARD / BELLY ZONE (rel_y > 0.72)
+        if rel_y > 0.72:
+            continue
+
+        # STRICT FACIAL MOUTH/LIP/CHIN BOUNDARY (Excludes side ears, neck lanyards, and background shoulders)
+        exp_x1 = px1 + 0.14 * pw
+        exp_x2 = px2 - 0.14 * pw
 
         if (exp_x1 <= c_cx <= exp_x2):
             return True
