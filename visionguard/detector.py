@@ -225,8 +225,13 @@ class Detector:
                 if cls_id == 0:
                     pw = float(xyxy[2] - xyxy[0])
                     ph = float(xyxy[3] - xyxy[1])
-                    if pw < 15 or ph < 20:  # Ignore tiny noise dots only
+                    p_area = pw * ph
+                    aspect = ph / (pw + 1e-5)
+
+                    # Reject tiny noise dots & oversized non-human background boxes
+                    if pw < 20 or ph < 30 or p_area > 0.90 * (fw * fh) or aspect < 0.35:
                         continue
+
                     clamped_box = [
                         max(0.0, min(float(fw), float(xyxy[0]))),
                         max(0.0, min(float(fh), float(xyxy[1]))),
