@@ -122,13 +122,16 @@ class VideoProcessor:
             return self._latest_jpeg
 
     def _run_inference_worker(self):
-        """Asynchronous background worker that continuously runs YOLO inference."""
+        """Asynchronous background worker that runs YOLO inference on new frames only."""
         while not self._stopped:
+            frame = None
             with self._det_lock:
-                frame = None if self._latest_frame_for_det is None else self._latest_frame_for_det.copy()
+                if self._latest_frame_for_det is not None:
+                    frame = self._latest_frame_for_det.copy()
+                    self._latest_frame_for_det = None  # Consume frame!
             
             if frame is None or not self.detector.ready:
-                time.sleep(0.01)
+                time.sleep(0.005)
                 continue
 
             # Run deep YOLO inference asynchronously without blocking video playback
@@ -136,7 +139,7 @@ class VideoProcessor:
             with self._det_lock:
                 self._det_results = (persons, cigs, smoking, confs)
             
-            time.sleep(0.005)
+            time.sleep(0.002)
 
     def _run_display_loop(self):
         """High-performance 50-60 FPS camera capture and display loop."""

@@ -202,9 +202,6 @@ class Detector:
                 device=self.device, half=self.half, verbose=False,
             )
         except Exception:
-            pass
-
-        if not pr or not pr[0].boxes or len(pr[0].boxes) == 0:
             try:
                 pr = self.person_model.predict(
                     frame, classes=[0], conf=self.person_conf, iou=self.iou_thresh,
